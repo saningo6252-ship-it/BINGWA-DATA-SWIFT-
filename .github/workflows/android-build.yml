@@ -32,6 +32,36 @@ jobs:
             flutter create . --platforms=android --project-name bingwa_data_swift
           fi
 
+      - name: Apply custom app icon
+        run: |
+          ICON_FILE=$(ls IMG-20261111-WA4667* 2>/dev/null | head -n 1)
+          if [ -n "$ICON_FILE" ] && [ -f "$ICON_FILE" ]; then
+            ICON_PATH="$ICON_FILE" python3 - <<'EOF'
+          import os
+          from PIL import Image
+
+          src = os.environ["ICON_PATH"]
+          res_dir = "android/app/src/main/res"
+          sizes = {
+              "mipmap-mdpi": 48,
+              "mipmap-hdpi": 72,
+              "mipmap-xhdpi": 96,
+              "mipmap-xxhdpi": 144,
+              "mipmap-xxxhdpi": 192,
+          }
+          with Image.open(src) as im:
+              rgba = im.convert("RGBA")
+              for folder, px in sizes.items():
+                  out_dir = os.path.join(res_dir, folder)
+                  os.makedirs(out_dir, exist_ok=True)
+                  resized = rgba.resize((px, px), Image.Resampling.LANCZOS)
+                  resized.save(os.path.join(out_dir, "ic_launcher.png"), format="PNG")
+          print(f"Applied {src} to all mipmap folders.")
+          EOF
+          else
+            echo "No IMG-20261111-WA4667* file found; keeping default icon."
+          fi
+
       - name: Update Kotlin version in Android project
         run: |
           if [ -f "android/settings.gradle" ]; then
