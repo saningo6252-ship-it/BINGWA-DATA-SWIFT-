@@ -38,6 +38,36 @@ jobs:
             sed -i -E 's/(id\("org\.jetbrains\.kotlin\.android"\) version ")[0-9.]+(")/\12.0.20\2/g' android/settings.gradle.kts
           fi
 
+      - name: Set App Name and Apply Custom Icon
+        run: |
+          python3 - <<'PY'
+          import os, re, subprocess
+
+          manifest_path = "android/app/src/main/AndroidManifest.xml"
+          if os.path.exists(manifest_path):
+              with open(manifest_path, "r", encoding="utf-8") as f:
+                  content = f.read()
+              content = re.sub(r'android:label="[^"]*"', 'android:label="BINGWA DATA SWIFT"', content)
+              with open(manifest_path, "w", encoding="utf-8") as f:
+                  f.write(content)
+
+          src_icon = "assets/app_icon.png"
+          densities = {
+              "mipmap-mdpi": 48,
+              "mipmap-hdpi": 72,
+              "mipmap-xhdpi": 96,
+              "mipmap-xxhdpi": 144,
+              "mipmap-xxxhdpi": 192,
+          }
+          if os.path.exists(src_icon):
+              for folder, sz in densities.items():
+                  out_dir = os.path.join("android/app/src/main", folder)
+                  os.makedirs(out_dir, exist_ok=True)
+                  for name in ["ic_launcher.png", "ic_launcher_round.png", "ic_launcher_foreground.png"]:
+                      dst = os.path.join(out_dir, name)
+                      subprocess.run(["cp", src_icon, dst], check=True)
+          PY
+
       - name: Install dependencies
         run: flutter pub get
 
