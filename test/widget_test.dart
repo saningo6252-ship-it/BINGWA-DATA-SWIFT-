@@ -1,10 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:bingwa_data_swift_/main.dart' as app;
+import '../lib/main.dart';
 
 void main() {
-  testWidgets('App starts smoke test', (WidgetTester tester) async {
-    app.main();
-    await tester.pumpAndSettle();
+  testWidgets('BingwaDataSwiftApp renders', (WidgetTester tester) async {
+    await tester.pumpWidget(const BingwaDataSwiftApp());
     expect(find.text('BINGWA SOKONI DATA SWIFT'), findsOneWidget);
   });
 }
