@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,7 +28,7 @@ class BSColors {
 
 class OfferModel {
   final String id;
-  final String network;
+  final String network; // SAFARICOM, AIRTEL, TELKOM, FAIBA
   final String name;
   final String priceLabel;
   final int? fixedPriceKes;
@@ -79,6 +80,20 @@ class OfferModel {
   }
 }
 
+class AdItem {
+  final String id;
+  final String title;
+  final String subtitle;
+  final IconData icon;
+
+  const AdItem({
+    required this.id,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+  });
+}
+
 class OrderRecord {
   final String orderId;
   final String network;
@@ -109,7 +124,9 @@ class Catalogue68 {
   static const String appName = 'BINGWA SOKONI DATA SWIFT';
   static const String tagline = 'Bundles and airtime that keep you connected.';
   static const String whatsappPhone = '0794363801';
-  static const String callPhone = '0794 363801';
+  static const String callPhone = '0794363801';
+  static const String whatsappGroupUrl = 'https://chat.whatsapp.com/BingwaDataSwiftGroup';
+  static const String appDownloadBaseUrl = 'https://bingwasokoni.app/download';
 
   static const List<OfferModel> initialOffers = [
     // SAFARICOM DATA/COMBO (24)
@@ -196,6 +213,38 @@ class Catalogue68 {
   ];
 }
 
+Future<void> openWhatsAppDirect(BuildContext context) async {
+  final digits = Catalogue68.whatsappPhone.replaceAll(RegExp(r'\D'), '');
+  final international = digits.startsWith('0') ? '254${digits.substring(1)}' : digits;
+  final uri = Uri.parse('https://wa.me/$international');
+  final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+  if (!launched && context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Unable to open WhatsApp on this device.')),
+    );
+  }
+}
+
+Future<void> openCallDirect(BuildContext context) async {
+  final uri = Uri(scheme: 'tel', path: Catalogue68.callPhone);
+  final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+  if (!launched && context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Unable to open phone dialer on this device.')),
+    );
+  }
+}
+
+Future<void> openWhatsAppGroupDirect(BuildContext context) async {
+  final uri = Uri.parse(Catalogue68.whatsappGroupUrl);
+  final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+  if (!launched && context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Unable to open WhatsApp group link.')),
+    );
+  }
+}
+
 class BingwaSokoniApp extends StatefulWidget {
   const BingwaSokoniApp({super.key});
 
@@ -206,16 +255,26 @@ class BingwaSokoniApp extends StatefulWidget {
 class _BingwaSokoniAppState extends State<BingwaSokoniApp> {
   bool _showSplash = true;
   bool _isAuthenticated = false;
-  String _userName = 'BINGWA USER';
+  String _userName = 'Bingwa User';
   String _userPhone = '07XXXXXXXX';
   String _userPin = '1234';
-  String _referralCode = 'BSDS-0794';
+  String _profilePhotoLabel = '';
   bool _storeOpen = true;
 
   List<OfferModel> _offers = List<OfferModel>.from(Catalogue68.initialOffers);
-  List<String> _ads = [
-    'BEI NAFUU KULIKO WOTE SOKONI - BINGWA SOKONI DATA SWIFT!',
-    'DELIVERY IN SECONDS - UKILIPA, UNAINGIA MARA MOJA!',
+  List<AdItem> _ads = [
+    const AdItem(
+      id: 'ad_1',
+      title: 'Fast Data & Minutes Across Networks',
+      subtitle: 'Instant M-Pesa STK Push checkout with clear bundle details.',
+      icon: Icons.bolt,
+    ),
+    const AdItem(
+      id: 'ad_2',
+      title: 'Safaricom, Airtel, Telkom & Faiba',
+      subtitle: 'Choose your network and confirm your recipient number easily.',
+      icon: Icons.wifi_tethering,
+    ),
   ];
   final List<OrderRecord> _orders = [];
 
@@ -229,19 +288,24 @@ class _BingwaSokoniAppState extends State<BingwaSokoniApp> {
     });
   }
 
-  void _onLoginSuccess({String? name, String? phone, String? pin}) {
+  void _onLoginSuccess({
+    String? name,
+    String? phone,
+    String? pin,
+    String? profilePhotoLabel,
+  }) {
     setState(() {
       if (name != null && name.trim().isNotEmpty) {
-        _userName = name.trim().toUpperCase();
+        _userName = name.trim();
       }
       if (phone != null && phone.trim().isNotEmpty) {
         _userPhone = phone.trim();
-        final digits = phone.replaceAll(RegExp(r'\D'), '');
-        final tail = digits.length >= 4 ? digits.substring(digits.length - 4) : '0794';
-        _referralCode = 'BSDS-$tail';
       }
       if (pin != null && pin.length == 4) {
         _userPin = pin;
+      }
+      if (profilePhotoLabel != null && profilePhotoLabel.trim().isNotEmpty) {
+        _profilePhotoLabel = profilePhotoLabel.trim();
       }
       _isAuthenticated = true;
     });
@@ -266,27 +330,29 @@ class _BingwaSokoniAppState extends State<BingwaSokoniApp> {
           primary: BSColors.primaryGreen,
           surface: BSColors.pureWhite,
         ),
+        textTheme: const TextTheme(
+          bodyLarge: TextStyle(fontWeight: FontWeight.normal, color: BSColors.blackText),
+          bodyMedium: TextStyle(fontWeight: FontWeight.normal, color: BSColors.blackText),
+          titleMedium: TextStyle(fontWeight: FontWeight.w500, color: BSColors.blackText),
+        ),
       ),
       home: _showSplash
           ? const SplashScreen()
           : !_isAuthenticated
               ? AuthScreen(
-                  savedName: _userName,
-                  savedPhone: _userPhone,
-                  savedPin: _userPin,
                   onSuccess: _onLoginSuccess,
                 )
               : MainShellScreen(
                   userName: _userName,
                   userPhone: _userPhone,
-                  userPin: _userPin,
-                  referralCode: _referralCode,
+                  profilePhotoLabel: _profilePhotoLabel,
                   storeOpen: _storeOpen,
                   offers: _offers,
                   ads: _ads,
                   orders: _orders,
                   onLogout: _onLogout,
                   onUpdatePin: (newPin) => setState(() => _userPin = newPin),
+                  onUpdateProfilePhoto: (label) => setState(() => _profilePhotoLabel = label),
                   onToggleStore: (open) => setState(() => _storeOpen = open),
                   onAddOffer: (offer) => setState(() => _offers.insert(0, offer)),
                   onEditOffer: (updated) {
@@ -301,6 +367,7 @@ class _BingwaSokoniAppState extends State<BingwaSokoniApp> {
                   onAddAd: (ad) => setState(() => _ads.add(ad)),
                   onRemoveAd: (index) => setState(() => _ads.removeAt(index)),
                   onRecordStkAttempt: (order) => setState(() => _orders.insert(0, order)),
+                  onClearOrders: () => setState(() => _orders.clear()),
                 ),
     );
   }
@@ -325,11 +392,11 @@ class SplashScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: BSColors.softGreenBg,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: BSColors.primaryGreen, width: 2),
+                  border: Border.all(color: BSColors.primaryGreen, width: 1.5),
                 ),
                 child: const Icon(
                   Icons.bolt,
-                  size: 54,
+                  size: 52,
                   color: BSColors.primaryGreen,
                 ),
               ),
@@ -338,18 +405,18 @@ class SplashScreen extends StatelessWidget {
                 Catalogue68.appName,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w500,
                   color: BSColors.blackText,
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               const Text(
                 Catalogue68.tagline,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.normal,
                   color: BSColors.greyText,
                 ),
               ),
@@ -362,16 +429,15 @@ class SplashScreen extends StatelessWidget {
 }
 
 class AuthScreen extends StatefulWidget {
-  final String savedName;
-  final String savedPhone;
-  final String savedPin;
-  final void Function({String? name, String? phone, String? pin}) onSuccess;
+  final void Function({
+    String? name,
+    String? phone,
+    String? pin,
+    String? profilePhotoLabel,
+  }) onSuccess;
 
   const AuthScreen({
     super.key,
-    required this.savedName,
-    required this.savedPhone,
-    required this.savedPin,
     required this.onSuccess,
   });
 
@@ -383,6 +449,7 @@ class _AuthScreenState extends State<AuthScreen> {
   bool _isLoginMode = true;
   bool _forgotPinMode = false;
   bool _otpSent = false;
+  String _selectedPhotoName = '';
 
   final _nameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
@@ -390,9 +457,18 @@ class _AuthScreenState extends State<AuthScreen> {
   final _pinCtrl = TextEditingController();
   String _error = '';
 
+  void _uploadProfilePicture() {
+    setState(() {
+      _selectedPhotoName = 'profile_photo_selected.jpg';
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Profile picture selected for your account.')),
+    );
+  }
+
   void _sendOtp() {
     if (_phoneCtrl.text.trim().length < 9) {
-      setState(() => _error = 'ENTER VALID PHONE NUMBER FIRST');
+      setState(() => _error = 'Please enter a valid phone number first.');
       return;
     }
     setState(() {
@@ -400,12 +476,7 @@ class _AuthScreenState extends State<AuthScreen> {
       _error = '';
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'OTP SENT TO YOUR PHONE NUMBER',
-          style: TextStyle(fontWeight: FontWeight.w800),
-        ),
-      ),
+      const SnackBar(content: Text('OTP sent to your phone number.')),
     );
   }
 
@@ -415,229 +486,256 @@ class _AuthScreenState extends State<AuthScreen> {
 
     if (_forgotPinMode) {
       if (phone.length < 9 || _otpCtrl.text.trim().length < 4 || pin.length != 4) {
-        setState(() => _error = 'ENTER PHONE, OTP, AND NEW 4-DIGIT PIN');
+        setState(() => _error = 'Enter phone number, OTP, and a new 4-digit PIN.');
         return;
       }
-      widget.onSuccess(phone: phone, pin: pin);
+      widget.onSuccess(
+        phone: phone,
+        pin: pin,
+        profilePhotoLabel: _selectedPhotoName,
+      );
       return;
     }
 
     if (_isLoginMode) {
       if (phone.length < 9 || pin.length != 4) {
-        setState(() => _error = 'ENTER PHONE AND 4-DIGIT PIN');
+        setState(() => _error = 'Enter your phone number and 4-digit PIN.');
         return;
       }
-      widget.onSuccess(phone: phone, pin: pin);
+      widget.onSuccess(
+        phone: phone,
+        pin: pin,
+        profilePhotoLabel: _selectedPhotoName,
+      );
     } else {
       if (_nameCtrl.text.trim().isEmpty ||
           phone.length < 9 ||
           _otpCtrl.text.trim().length < 4 ||
           pin.length != 4) {
-        setState(() => _error = 'COMPLETE NAME, PHONE, OTP, AND 4-DIGIT PIN');
+        setState(() => _error = 'Complete name, phone number, OTP, and 4-digit PIN.');
         return;
       }
-      widget.onSuccess(name: _nameCtrl.text.trim(), phone: phone, pin: pin);
+      widget.onSuccess(
+        name: _nameCtrl.text.trim(),
+        phone: phone,
+        pin: pin,
+        profilePhotoLabel: _selectedPhotoName,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final titleText = _forgotPinMode
-        ? 'RESET PIN WITH OTP'
-        : (_isLoginMode ? 'WELCOME BACK!' : 'REGISTER ACCOUNT');
+        ? 'Reset PIN with OTP'
+        : (_isLoginMode ? 'Welcome Back' : 'Create Account');
 
     return Scaffold(
       backgroundColor: BSColors.pureWhite,
-      appBar: AppBar(
-        backgroundColor: BSColors.pureWhite,
-        title: const Text(
-          Catalogue68.appName,
-          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => setState(() {
-                      _isLoginMode = true;
-                      _forgotPinMode = false;
-                      _error = '';
-                    }),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: _isLoginMode && !_forgotPinMode
-                            ? BSColors.primaryGreen
-                            : BSColors.lightGreyPill,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'LOGIN',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            color: _isLoginMode && !_forgotPinMode
-                                ? BSColors.pureWhite
-                                : BSColors.blackText,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const Text(
+                    Catalogue68.appName,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(() {
+                            _isLoginMode = true;
+                            _forgotPinMode = false;
+                            _error = '';
+                          }),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: _isLoginMode && !_forgotPinMode
+                                  ? BSColors.primaryGreen
+                                  : BSColors.lightGreyPill,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Center(
+                              child: Text(
+                                'Login',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  color: _isLoginMode && !_forgotPinMode
+                                      ? BSColors.pureWhite
+                                      : BSColors.blackText,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => setState(() {
-                      _isLoginMode = false;
-                      _forgotPinMode = false;
-                      _error = '';
-                    }),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: !_isLoginMode && !_forgotPinMode
-                            ? BSColors.primaryGreen
-                            : BSColors.lightGreyPill,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'REGISTER',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            color: !_isLoginMode && !_forgotPinMode
-                                ? BSColors.pureWhite
-                                : BSColors.blackText,
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(() {
+                            _isLoginMode = false;
+                            _forgotPinMode = false;
+                            _error = '';
+                          }),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: !_isLoginMode && !_forgotPinMode
+                                  ? BSColors.primaryGreen
+                                  : BSColors.lightGreyPill,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Center(
+                              child: Text(
+                                'Register',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  color: !_isLoginMode && !_forgotPinMode
+                                      ? BSColors.pureWhite
+                                      : BSColors.blackText,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  GestureDetector(
+                    onTap: _uploadProfilePicture,
+                    child: Column(
+                      children: [
+                        CircleAvatar(
+                          radius: 36,
+                          backgroundColor: BSColors.softGreenBg,
+                          child: Icon(
+                            _selectedPhotoName.isEmpty ? Icons.camera_alt : Icons.check,
+                            color: BSColors.primaryGreen,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _selectedPhotoName.isEmpty
+                              ? 'Upload Profile Picture'
+                              : 'Profile Picture Selected',
+                          style: const TextStyle(
+                            color: BSColors.primaryGreen,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Text(
-              titleText,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 14),
-            if (!_isLoginMode && !_forgotPinMode) ...[
-              const Text('FULL NAME', style: TextStyle(fontWeight: FontWeight.w800)),
-              const SizedBox(height: 6),
-              TextField(
-                controller: _nameCtrl,
-                style: const TextStyle(fontWeight: FontWeight.w800),
-                decoration: const InputDecoration(
-                  hintText: 'ENTER FULL NAME',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
-            const Text('PHONE NUMBER', style: TextStyle(fontWeight: FontWeight.w800)),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _phoneCtrl,
-                    keyboardType: TextInputType.phone,
-                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  const SizedBox(height: 16),
+                  Text(
+                    titleText,
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 14),
+                  if (!_isLoginMode && !_forgotPinMode) ...[
+                    TextField(
+                      controller: _nameCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Full Name',
+                        hintText: 'Enter full name',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _phoneCtrl,
+                          keyboardType: TextInputType.phone,
+                          decoration: const InputDecoration(
+                            labelText: 'Phone Number',
+                            hintText: '07XXXXXXXX',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                      if (!_isLoginMode || _forgotPinMode) ...[
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: _sendOtp,
+                          child: Text(_otpSent ? 'Resend OTP' : 'Send OTP'),
+                        ),
+                      ],
+                    ],
+                  ),
+                  if (!_isLoginMode || _forgotPinMode) ...[
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _otpCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'OTP Code',
+                        hintText: 'Enter OTP',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _pinCtrl,
+                    keyboardType: TextInputType.number,
+                    obscureText: true,
+                    maxLength: 4,
                     decoration: const InputDecoration(
-                      hintText: '07XXXXXXXX',
+                      labelText: '4-Digit PIN',
+                      hintText: '****',
                       border: OutlineInputBorder(),
                     ),
                   ),
-                ),
-                if (!_isLoginMode || _forgotPinMode) ...[
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: _sendOtp,
+                  if (_error.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      _error,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: BSColors.dangerRed),
+                    ),
+                  ],
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: _submit,
+                      child: Text(
+                        _forgotPinMode
+                            ? 'Save New PIN'
+                            : (_isLoginMode ? 'Login' : 'Register'),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () => setState(() {
+                      _forgotPinMode = !_forgotPinMode;
+                      _error = '';
+                    }),
                     child: Text(
-                      _otpSent ? 'RESEND OTP' : 'SEND OTP',
-                      style: const TextStyle(fontWeight: FontWeight.w800),
+                      _forgotPinMode ? 'Back to Login' : 'Forgot PIN with OTP?',
+                      style: const TextStyle(color: BSColors.primaryGreen),
                     ),
                   ),
                 ],
-              ],
-            ),
-            if (!_isLoginMode || _forgotPinMode) ...[
-              const SizedBox(height: 12),
-              const Text('ENTER OTP', style: TextStyle(fontWeight: FontWeight.w800)),
-              const SizedBox(height: 6),
-              TextField(
-                controller: _otpCtrl,
-                keyboardType: TextInputType.number,
-                style: const TextStyle(fontWeight: FontWeight.w800),
-                decoration: const InputDecoration(
-                  hintText: '4-6 DIGIT OTP',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ],
-            const SizedBox(height: 12),
-            const Text('4-DIGIT PIN', style: TextStyle(fontWeight: FontWeight.w800)),
-            const SizedBox(height: 6),
-            TextField(
-              controller: _pinCtrl,
-              keyboardType: TextInputType.number,
-              obscureText: true,
-              maxLength: 4,
-              style: const TextStyle(fontWeight: FontWeight.w800),
-              decoration: const InputDecoration(
-                hintText: '****',
-                border: OutlineInputBorder(),
               ),
             ),
-            if (_error.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                _error,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w800,
-                  color: BSColors.dangerRed,
-                ),
-              ),
-            ],
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: _submit,
-                child: Text(
-                  _forgotPinMode
-                      ? 'SAVE NEW PIN'
-                      : (_isLoginMode ? 'LOGIN' : 'CREATE ACCOUNT'),
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Center(
-              child: TextButton(
-                onPressed: () => setState(() {
-                  _forgotPinMode = !_forgotPinMode;
-                  _error = '';
-                }),
-                child: Text(
-                  _forgotPinMode ? 'BACK TO LOGIN' : 'FORGOT PIN WITH OTP?',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    color: BSColors.primaryGreen,
-                  ),
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -647,34 +745,35 @@ class _AuthScreenState extends State<AuthScreen> {
 class MainShellScreen extends StatefulWidget {
   final String userName;
   final String userPhone;
-  final String userPin;
-  final String referralCode;
+  final String profilePhotoLabel;
   final bool storeOpen;
   final List<OfferModel> offers;
-  final List<String> ads;
+  final List<AdItem> ads;
   final List<OrderRecord> orders;
   final VoidCallback onLogout;
   final ValueChanged<String> onUpdatePin;
+  final ValueChanged<String> onUpdateProfilePhoto;
   final ValueChanged<bool> onToggleStore;
   final ValueChanged<OfferModel> onAddOffer;
   final ValueChanged<OfferModel> onEditOffer;
   final ValueChanged<String> onDeleteOffer;
-  final ValueChanged<String> onAddAd;
+  final ValueChanged<AdItem> onAddAd;
   final ValueChanged<int> onRemoveAd;
   final ValueChanged<OrderRecord> onRecordStkAttempt;
+  final VoidCallback onClearOrders;
 
   const MainShellScreen({
     super.key,
     required this.userName,
     required this.userPhone,
-    required this.userPin,
-    required this.referralCode,
+    required this.profilePhotoLabel,
     required this.storeOpen,
     required this.offers,
     required this.ads,
     required this.orders,
     required this.onLogout,
     required this.onUpdatePin,
+    required this.onUpdateProfilePhoto,
     required this.onToggleStore,
     required this.onAddOffer,
     required this.onEditOffer,
@@ -682,6 +781,7 @@ class MainShellScreen extends StatefulWidget {
     required this.onAddAd,
     required this.onRemoveAd,
     required this.onRecordStkAttempt,
+    required this.onClearOrders,
   });
 
   @override
@@ -712,7 +812,9 @@ class _MainShellScreenState extends State<MainShellScreen> {
         builder: (_) => AccountScreen(
           userName: widget.userName,
           userPhone: widget.userPhone,
+          profilePhotoLabel: widget.profilePhotoLabel,
           onUpdatePin: widget.onUpdatePin,
+          onUpdateProfilePhoto: widget.onUpdateProfilePhoto,
           onLogout: widget.onLogout,
           onOpenAdmin: () {
             Navigator.push(
@@ -743,14 +845,17 @@ class _MainShellScreenState extends State<MainShellScreen> {
     final pages = [
       HomeTabScreen(
         userName: widget.userName,
+        profilePhotoLabel: widget.profilePhotoLabel,
         storeOpen: widget.storeOpen,
         ads: widget.ads,
         onProfileTap: _openAccount,
         onNetworkTap: _openNetwork,
-        onReferTap: () => setState(() => _navIndex = 1),
       ),
-      ReferTabScreen(referralCode: widget.referralCode),
-      HistoryTabScreen(orders: widget.orders),
+      const ReferTabScreen(),
+      HistoryTabScreen(
+        orders: widget.orders,
+        onClearOrders: widget.onClearOrders,
+      ),
       const SupportTabScreen(),
     ];
 
@@ -763,12 +868,10 @@ class _MainShellScreenState extends State<MainShellScreen> {
         backgroundColor: BSColors.pureWhite,
         selectedItemColor: BSColors.primaryGreen,
         unselectedItemColor: BSColors.blackText,
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
-        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
         onTap: (idx) => setState(() => _navIndex = idx),
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.card_giftcard), label: 'Refer'),
+          BottomNavigationBarItem(icon: Icon(Icons.link), label: 'Refer'),
           BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
           BottomNavigationBarItem(icon: Icon(Icons.support_agent), label: 'Support'),
         ],
@@ -779,21 +882,90 @@ class _MainShellScreenState extends State<MainShellScreen> {
 
 class HomeTabScreen extends StatelessWidget {
   final String userName;
+  final String profilePhotoLabel;
   final bool storeOpen;
-  final List<String> ads;
+  final List<AdItem> ads;
   final VoidCallback onProfileTap;
   final ValueChanged<String> onNetworkTap;
-  final VoidCallback onReferTap;
 
   const HomeTabScreen({
     super.key,
     required this.userName,
+    required this.profilePhotoLabel,
     required this.storeOpen,
     required this.ads,
     required this.onProfileTap,
     required this.onNetworkTap,
-    required this.onReferTap,
   });
+
+  Widget _buildCompanyLogo(String company) {
+    switch (company) {
+      case 'SAFARICOM':
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: BSColors.softGreenBg,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.cell_tower, size: 16, color: BSColors.primaryGreen),
+              SizedBox(width: 5),
+              Text('Safaricom', style: TextStyle(color: BSColors.primaryGreen, fontSize: 12)),
+            ],
+          ),
+        );
+      case 'AIRTEL':
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFDECEC),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.signal_cellular_alt, size: 16, color: BSColors.dangerRed),
+              SizedBox(width: 5),
+              Text('Airtel', style: TextStyle(color: BSColors.dangerRed, fontSize: 12)),
+            ],
+          ),
+        );
+      case 'TELKOM':
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEAF2FE),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.network_cell, size: 16, color: Color(0xFF1D4ED8)),
+              SizedBox(width: 5),
+              Text('Telkom', style: TextStyle(color: Color(0xFF1D4ED8), fontSize: 12)),
+            ],
+          ),
+        );
+      default:
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: BSColors.amberBg,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.router, size: 16, color: BSColors.amberText),
+              SizedBox(width: 5),
+              Text('Faiba', style: TextStyle(color: BSColors.amberText, fontSize: 12)),
+            ],
+          ),
+        );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -820,11 +992,7 @@ class HomeTabScreen extends StatelessWidget {
                 const Expanded(
                   child: Text(
                     Catalogue68.appName,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: BSColors.blackText,
-                    ),
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
                   ),
                 ),
                 GestureDetector(
@@ -832,12 +1000,9 @@ class HomeTabScreen extends StatelessWidget {
                   child: CircleAvatar(
                     radius: 20,
                     backgroundColor: BSColors.primaryGreen,
-                    child: Text(
-                      userName.isNotEmpty ? userName[0] : 'B',
-                      style: const TextStyle(
-                        color: BSColors.pureWhite,
-                        fontWeight: FontWeight.w800,
-                      ),
+                    child: Icon(
+                      profilePhotoLabel.isNotEmpty ? Icons.person : Icons.account_circle,
+                      color: BSColors.pureWhite,
                     ),
                   ),
                 ),
@@ -845,23 +1010,13 @@ class HomeTabScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             const Text(
-              'Karibu Tena!',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+              'Welcome Back',
+              style: TextStyle(fontSize: 21, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 4),
             const Text(
-              'Bundles Rahisi, Haraka, na za Kuaminika.',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: BSColors.greyText),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Delivery in Seconds - Ukilipa, Unaingia Mara Moja!',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: BSColors.primaryGreen),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Bei Nafuu Kuliko Wote Sokoni - Bingwa Sokoni Data Swift!',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: BSColors.blackText),
+              Catalogue68.tagline,
+              style: TextStyle(fontSize: 14, color: BSColors.greyText),
             ),
             if (!storeOpen) ...[
               const SizedBox(height: 12),
@@ -873,70 +1028,63 @@ class HomeTabScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Text(
-                  'STORE CLOSED: BROWSE ONLY. NO ORDERS RIGHT NOW.',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    color: BSColors.amberText,
-                    fontSize: 12,
-                  ),
+                  'Store Closed: Browse only. No orders right now.',
+                  style: TextStyle(color: BSColors.amberText, fontSize: 13),
                 ),
               ),
             ],
             const SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: BSColors.primaryGreen,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: ads
-                    .map(
-                      (ad) => Padding(
-                        padding: const EdgeInsets.only(bottom: 6),
-                        child: Text(
-                          ad,
-                          style: const TextStyle(
+            SizedBox(
+              height: 128,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: ads.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (context, idx) {
+                  final ad = ads[idx];
+                  return Container(
+                    width: 280,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: BSColors.softGreenBg,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: BSColors.primaryGreen),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
                             color: BSColors.pureWhite,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 14,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Icon(ad.icon, size: 30, color: BSColors.primaryGreen),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                ad.title,
+                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                ad.subtitle,
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 12, color: BSColors.greyText),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                    )
-                    .toList(),
-              ),
-            ),
-            const SizedBox(height: 14),
-            GestureDetector(
-              onTap: onReferTap,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: BSColors.softGreenBg,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: BSColors.primaryGreen),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.people_alt, color: BSColors.primaryGreen),
-                    SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        'INVITE FRIENDS & EARN REWARDS!',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          color: BSColors.primaryGreen,
-                          fontSize: 14,
-                        ),
-                      ),
+                      ],
                     ),
-                    Icon(Icons.arrow_forward_ios, size: 16, color: BSColors.primaryGreen),
-                  ],
-                ),
+                  );
+                },
               ),
             ),
             const SizedBox(height: 18),
@@ -948,7 +1096,7 @@ class HomeTabScreen extends StatelessWidget {
                 crossAxisCount: 2,
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
-                childAspectRatio: 1.45,
+                childAspectRatio: 1.35,
               ),
               itemBuilder: (context, index) {
                 final company = companies[index];
@@ -961,21 +1109,22 @@ class HomeTabScreen extends StatelessWidget {
                       border: Border.all(color: BSColors.cardBorder),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.06),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
                         ),
                       ],
                     ),
-                    child: Center(
-                      child: Text(
-                        company,
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
-                          color: BSColors.blackText,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildCompanyLogo(company),
+                        const SizedBox(height: 10),
+                        Text(
+                          company,
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
                         ),
-                      ),
+                      ],
                     ),
                   ),
                 );
@@ -1011,10 +1160,7 @@ class NetworkOffersScreen extends StatelessWidget {
       backgroundColor: BSColors.pureWhite,
       appBar: AppBar(
         backgroundColor: BSColors.pureWhite,
-        title: Text(
-          network,
-          style: const TextStyle(fontWeight: FontWeight.w800),
-        ),
+        title: Text(network),
       ),
       body: Column(
         children: [
@@ -1024,11 +1170,8 @@ class NetworkOffersScreen extends StatelessWidget {
               color: BSColors.amberBg,
               padding: const EdgeInsets.all(10),
               child: const Text(
-                'STORE CLOSED: BROWSE ONLY',
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  color: BSColors.amberText,
-                ),
+                'Store Closed: Browse only',
+                style: TextStyle(color: BSColors.amberText),
               ),
             ),
           Expanded(
@@ -1046,9 +1189,9 @@ class NetworkOffersScreen extends StatelessWidget {
                     border: Border.all(color: BSColors.cardBorder),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
                       ),
                     ],
                   ),
@@ -1061,32 +1204,18 @@ class NetworkOffersScreen extends StatelessWidget {
                           color: BSColors.softGreenBg,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(
-                          Icons.card_giftcard,
-                          color: BSColors.primaryGreen,
-                        ),
+                        child: const Icon(Icons.card_giftcard, color: BSColors.primaryGreen),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              item.name,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 15,
-                                color: BSColors.blackText,
-                              ),
-                            ),
+                            Text(item.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
                             const SizedBox(height: 4),
                             Text(
                               '${item.priceLabel}  •  ${item.validity}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 13,
-                                color: BSColors.greyText,
-                              ),
+                              style: const TextStyle(fontSize: 13, color: BSColors.greyText),
                             ),
                           ],
                         ),
@@ -1110,21 +1239,10 @@ class NetworkOffersScreen extends StatelessWidget {
                         style: OutlinedButton.styleFrom(
                           backgroundColor: BSColors.pureWhite,
                           foregroundColor: BSColors.primaryGreen,
-                          side: const BorderSide(
-                            color: BSColors.primaryGreen,
-                            width: 1.6,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          side: const BorderSide(color: BSColors.primaryGreen, width: 1.4),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        child: const Text(
-                          'BUY',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            color: BSColors.primaryGreen,
-                          ),
-                        ),
+                        child: const Text('Buy'),
                       ),
                     ],
                   ),
@@ -1172,29 +1290,29 @@ class _BuyConfirmScreenState extends State<BuyConfirmScreen> {
   String? _validatePhone(String? v) {
     final clean = (v ?? '').replaceAll(RegExp(r'\s+'), '');
     if (!RegExp(r'^(?:\+254|254|0)(?:7\d{8}|1\d{8})$').hasMatch(clean)) {
-      return 'ENTER VALID NUMBER (E.G. 07XXXXXXXX)';
+      return 'Enter a valid phone number (e.g. 07XXXXXXXX)';
     }
     return null;
   }
 
   String? _validateAmount(String? v) {
     final amt = int.tryParse((v ?? '').trim());
-    if (amt == null) return 'ENTER VALID AMOUNT';
+    if (amt == null) return 'Enter a valid amount';
     if (widget.offer.isFlexibleAmount) {
       final minVal = widget.offer.minKes ?? 1;
       final maxVal = widget.offer.maxKes ?? 499;
       if (amt < minVal || amt > maxVal) {
-        return 'MUST BE KES $minVal TO $maxVal';
+        return 'Amount must be between KES $minVal and KES $maxVal';
       }
     } else if (amt != widget.offer.fixedPriceKes) {
-      return 'MUST BE KES ${widget.offer.fixedPriceKes}';
+      return 'Amount must be KES ${widget.offer.fixedPriceKes}';
     }
     return null;
   }
 
   void _confirmAndPay() {
     if (!widget.storeOpen) {
-      setState(() => _statusMsg = 'STORE IS CLOSED. ORDERS DISABLED.');
+      setState(() => _statusMsg = 'Store is currently closed. Orders are disabled.');
       return;
     }
     if (!_formKey.currentState!.validate()) return;
@@ -1210,16 +1328,16 @@ class _BuyConfirmScreenState extends State<BuyConfirmScreen> {
         recipientPhone: _recipientCtrl.text.trim(),
         paymentPhone: _paymentCtrl.text.trim(),
         amountKes: amount,
-        paymentRef: 'AWAITING DARAJA CALLBACK',
-        dateLabel: 'NOW',
-        paymentStatus: 'PENDING CALLBACK VERIFICATION',
-        deliveryStatus: 'WAITING PROVIDER CONFIRMATION',
+        paymentRef: 'Awaiting Daraja Callback',
+        dateLabel: 'Just now',
+        paymentStatus: 'Pending Callback Verification',
+        deliveryStatus: 'Waiting Provider Confirmation',
       ),
     );
 
     setState(() {
       _statusMsg =
-          'STK PUSH REQUEST LOGGED ($orderId). CONNECT DARAJA BACKEND TO VERIFY CALLBACK BEFORE CONFIRMING DELIVERY.';
+          'STK Push request logged ($orderId). Connect the Daraja backend to verify callback before confirming delivery.';
     });
   }
 
@@ -1229,10 +1347,7 @@ class _BuyConfirmScreenState extends State<BuyConfirmScreen> {
       backgroundColor: BSColors.pureWhite,
       appBar: AppBar(
         backgroundColor: BSColors.pureWhite,
-        title: const Text(
-          'BUY / CONFIRM',
-          style: TextStyle(fontWeight: FontWeight.w800),
-        ),
+        title: const Text('Buy / Confirm'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -1252,55 +1367,57 @@ class _BuyConfirmScreenState extends State<BuyConfirmScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('NETWORK: ${widget.offer.network}', style: const TextStyle(fontWeight: FontWeight.w800)),
+                    Text('Network: ${widget.offer.network}'),
                     const SizedBox(height: 6),
-                    Text('BUNDLE: ${widget.offer.name}', style: const TextStyle(fontWeight: FontWeight.w800)),
+                    Text('Bundle: ${widget.offer.name}'),
                     const SizedBox(height: 6),
-                    Text('AMOUNT: ${widget.offer.priceLabel}', style: const TextStyle(fontWeight: FontWeight.w800, color: BSColors.primaryGreen)),
+                    Text(
+                      'Price: ${widget.offer.priceLabel} (${widget.offer.validity})',
+                      style: const TextStyle(color: BSColors.primaryGreen),
+                    ),
                   ],
                 ),
               ),
               const SizedBox(height: 14),
-              const Text('RECIPIENT PHONE', style: TextStyle(fontWeight: FontWeight.w800)),
-              const SizedBox(height: 6),
               TextFormField(
                 controller: _recipientCtrl,
                 keyboardType: TextInputType.phone,
                 validator: _validatePhone,
-                style: const TextStyle(fontWeight: FontWeight.w800),
-                decoration: const InputDecoration(hintText: '07XXXXXXXX', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Recipient Phone Number',
+                  hintText: '07XXXXXXXX',
+                  border: OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 12),
-              const Text('PAYMENT PHONE (M-PESA STK PUSH)', style: TextStyle(fontWeight: FontWeight.w800)),
-              const SizedBox(height: 6),
               TextFormField(
                 controller: _paymentCtrl,
                 keyboardType: TextInputType.phone,
                 validator: _validatePhone,
-                style: const TextStyle(fontWeight: FontWeight.w800),
-                decoration: const InputDecoration(hintText: '07XXXXXXXX', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'M-Pesa STK Push Phone Number',
+                  hintText: '07XXXXXXXX',
+                  border: OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 12),
-              const Text('AMOUNT (KES)', style: TextStyle(fontWeight: FontWeight.w800)),
-              const SizedBox(height: 6),
               TextFormField(
                 controller: _amountCtrl,
                 readOnly: !widget.offer.isFlexibleAmount,
                 keyboardType: TextInputType.number,
                 validator: _validateAmount,
-                style: const TextStyle(fontWeight: FontWeight.w800),
-                decoration: const InputDecoration(border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Amount (KES)',
+                  border: OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 18),
               SizedBox(
                 width: double.infinity,
-                height: 50,
+                height: 48,
                 child: ElevatedButton(
                   onPressed: _confirmAndPay,
-                  child: const Text(
-                    'CONFIRM & PAY',
-                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
-                  ),
+                  child: const Text('Confirm & Pay'),
                 ),
               ),
               if (_statusMsg.isNotEmpty) ...[
@@ -1314,10 +1431,7 @@ class _BuyConfirmScreenState extends State<BuyConfirmScreen> {
                   ),
                   child: Text(
                     _statusMsg,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      color: BSColors.amberText,
-                    ),
+                    style: const TextStyle(color: BSColors.amberText),
                   ),
                 ),
               ],
@@ -1329,9 +1443,32 @@ class _BuyConfirmScreenState extends State<BuyConfirmScreen> {
   }
 }
 
-class ReferTabScreen extends StatelessWidget {
-  final String referralCode;
-  const ReferTabScreen({super.key, required this.referralCode});
+class ReferTabScreen extends StatefulWidget {
+  const ReferTabScreen({super.key});
+
+  @override
+  State<ReferTabScreen> createState() => _ReferTabScreenState();
+}
+
+class _ReferTabScreenState extends State<ReferTabScreen> {
+  String _generatedLink = '${Catalogue68.appDownloadBaseUrl}?ref=app';
+
+  void _generateAppDownloadLink() {
+    final token = DateTime.now().millisecondsSinceEpoch.toRadixString(36);
+    setState(() {
+      _generatedLink = '${Catalogue68.appDownloadBaseUrl}?share=$token';
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('App download referral link generated.')),
+    );
+  }
+
+  void _copyLink() {
+    Clipboard.setData(ClipboardData(text: _generatedLink));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Referral download link copied.')),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1339,43 +1476,65 @@ class ReferTabScreen extends StatelessWidget {
       backgroundColor: BSColors.pureWhite,
       appBar: AppBar(
         backgroundColor: BSColors.pureWhite,
-        title: const Text('REFER', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text('Refer'),
       ),
-      body: Padding(
+      body: ListView(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'INVITE FRIENDS & EARN REWARDS!',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: BSColors.primaryGreen),
+        children: [
+          const Text(
+            'Share the App Download Link',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: BSColors.primaryGreen),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Generate a direct download link for Bingwa Sokoni Data Swift and share it with friends so they can download the app.',
+            style: TextStyle(color: BSColors.greyText),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: BSColors.softGreenBg,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: BSColors.primaryGreen),
             ),
-            const SizedBox(height: 14),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: BSColors.softGreenBg,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: BSColors.primaryGreen),
+            child: SelectableText(
+              _generatedLink,
+              style: const TextStyle(fontSize: 14),
+            ),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            height: 46,
+            child: ElevatedButton.icon(
+              onPressed: _generateAppDownloadLink,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Generate Download Link'),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            height: 46,
+            child: OutlinedButton.icon(
+              onPressed: _copyLink,
+              icon: const Icon(Icons.copy, color: BSColors.primaryGreen),
+              label: const Text('Copy Download Link', style: TextStyle(color: BSColors.primaryGreen)),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: BSColors.primaryGreen),
               ),
-              child: Text(
-                'YOUR REFERRAL CODE: $referralCode',
-                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-              ),
             ),
-            const SizedBox(height: 14),
-            const Text(
-              'INVITED LIST: NO REFERRALS RECORDED YET',
-              style: TextStyle(fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'REWARDS STATUS: PENDING / APPROVED (ADMIN CONTROLLED)',
-              style: TextStyle(fontWeight: FontWeight.w800, color: BSColors.greyText),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 20),
+          const Text('How Sharing Works', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 8),
+          const Text('1. Tap Generate Download Link to create a fresh app download link.'),
+          const SizedBox(height: 6),
+          const Text('2. Tap Copy Download Link and paste it in WhatsApp, SMS, or social chats.'),
+          const SizedBox(height: 6),
+          const Text('3. Friends use the link directly to download Bingwa Sokoni Data Swift.'),
+        ],
       ),
     );
   }
@@ -1383,7 +1542,13 @@ class ReferTabScreen extends StatelessWidget {
 
 class HistoryTabScreen extends StatelessWidget {
   final List<OrderRecord> orders;
-  const HistoryTabScreen({super.key, required this.orders});
+  final VoidCallback onClearOrders;
+
+  const HistoryTabScreen({
+    super.key,
+    required this.orders,
+    required this.onClearOrders,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1391,13 +1556,33 @@ class HistoryTabScreen extends StatelessWidget {
       backgroundColor: BSColors.pureWhite,
       appBar: AppBar(
         backgroundColor: BSColors.pureWhite,
-        title: const Text('HISTORY', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text('History'),
+        actions: [
+          if (orders.isNotEmpty)
+            TextButton(
+              onPressed: onClearOrders,
+              child: const Text('Clear', style: TextStyle(color: BSColors.dangerRed)),
+            ),
+        ],
       ),
       body: orders.isEmpty
-          ? const Center(
-              child: Text(
-                'NO ORDERS YET',
-                style: TextStyle(fontWeight: FontWeight.w800, color: BSColors.greyText),
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    Icon(Icons.receipt_long, size: 48, color: BSColors.greyText),
+                    SizedBox(height: 12),
+                    Text('No orders recorded yet.', style: TextStyle(fontSize: 16)),
+                    SizedBox(height: 6),
+                    Text(
+                      'Your M-Pesa STK Push order history, payment status, and delivery status will appear here.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: BSColors.greyText),
+                    ),
+                  ],
+                ),
               ),
             )
           : ListView.separated(
@@ -1416,12 +1601,19 @@ class HistoryTabScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('ORDER ID: ${o.orderId}', style: const TextStyle(fontWeight: FontWeight.w800)),
-                      Text('NETWORK: ${o.network} | BUNDLE: ${o.bundleName}', style: const TextStyle(fontWeight: FontWeight.w800)),
-                      Text('RECIPIENT: ${o.recipientPhone} | AMOUNT: KES ${o.amountKes}', style: const TextStyle(fontWeight: FontWeight.w800)),
-                      Text('REF: ${o.paymentRef} | DATE: ${o.dateLabel}', style: const TextStyle(fontWeight: FontWeight.w800)),
-                      Text('PAYMENT: ${o.paymentStatus}', style: const TextStyle(fontWeight: FontWeight.w800, color: BSColors.amberText)),
-                      Text('DELIVERY: ${o.deliveryStatus}', style: const TextStyle(fontWeight: FontWeight.w800, color: BSColors.greyText)),
+                      Text('Order ID: ${o.orderId}'),
+                      const SizedBox(height: 4),
+                      Text('Network: ${o.network} | Bundle: ${o.bundleName}'),
+                      const SizedBox(height: 4),
+                      Text('Recipient: ${o.recipientPhone} | Payment Phone: ${o.paymentPhone}'),
+                      const SizedBox(height: 4),
+                      Text('Amount: KES ${o.amountKes} | Date: ${o.dateLabel}'),
+                      const SizedBox(height: 4),
+                      Text('Payment Ref: ${o.paymentRef}'),
+                      const SizedBox(height: 4),
+                      Text('Payment Status: ${o.paymentStatus}', style: const TextStyle(color: BSColors.amberText)),
+                      const SizedBox(height: 4),
+                      Text('Delivery Status: ${o.deliveryStatus}', style: const TextStyle(color: BSColors.greyText)),
                     ],
                   ),
                 );
@@ -1440,72 +1632,83 @@ class SupportTabScreen extends StatelessWidget {
       backgroundColor: BSColors.pureWhite,
       appBar: AppBar(
         backgroundColor: BSColors.pureWhite,
-        title: const Text('SUPPORT', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text('Support'),
       ),
-      body: Padding(
+      body: ListView(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'WE ARE HERE TO HELP YOU!',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: BSColors.primaryGreen),
+        children: [
+          const Text(
+            'Customer Support',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: BSColors.primaryGreen),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Need help with an order or bundle request? Reach out directly using the buttons below.',
+            style: TextStyle(color: BSColors.greyText),
+          ),
+          const SizedBox(height: 18),
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton.icon(
+              onPressed: () => openWhatsAppDirect(context),
+              icon: const Icon(Icons.chat),
+              label: const Text('WhatsApp'),
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'Uko na shida na order? Tuambie, tunakusaidia haraka!',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'WHATSAPP: ${Catalogue68.whatsappPhone}',
-                        style: TextStyle(fontWeight: FontWeight.w800),
-                      ),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.chat),
-                label: const Text(
-                  'WHATSAPP US 0794363801',
-                  style: TextStyle(fontWeight: FontWeight.w800),
-                ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: OutlinedButton.icon(
+              onPressed: () => openCallDirect(context),
+              icon: const Icon(Icons.call, color: BSColors.primaryGreen),
+              label: const Text('Call', style: TextStyle(color: BSColors.primaryGreen)),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: BSColors.primaryGreen, width: 1.4),
               ),
             ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'CALL US: ${Catalogue68.callPhone}',
-                        style: TextStyle(fontWeight: FontWeight.w800),
-                      ),
-                    ),
-                  );
-                },
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: BSColors.primaryGreen, width: 1.6),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
-                icon: const Icon(Icons.call, color: BSColors.primaryGreen),
-                label: const Text(
-                  'CALL US 0794 363801',
-                  style: TextStyle(fontWeight: FontWeight.w800, color: BSColors.primaryGreen),
-                ),
-              ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton.icon(
+              onPressed: () => openWhatsAppGroupDirect(context),
+              icon: const Icon(Icons.groups),
+              label: const Text('Join Bingwa Data Swift WhatsApp Group'),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 22),
+          const Text('Helpful Information', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: BSColors.pureWhite,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: BSColors.cardBorder),
+            ),
+            child: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Direct M-Pesa STK Push', style: TextStyle(fontWeight: FontWeight.w500)),
+                SizedBox(height: 4),
+                Text(
+                  'All payments are initiated via M-Pesa STK Push and confirmed through server callback verification.',
+                  style: TextStyle(color: BSColors.greyText, fontSize: 13),
+                ),
+                SizedBox(height: 12),
+                Text('Wrong Recipient Number', style: TextStyle(fontWeight: FontWeight.w500)),
+                SizedBox(height: 4),
+                Text(
+                  'Double-check the recipient phone number before confirming payment so bundles reach the right line.',
+                  style: TextStyle(color: BSColors.greyText, fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1514,7 +1717,9 @@ class SupportTabScreen extends StatelessWidget {
 class AccountScreen extends StatelessWidget {
   final String userName;
   final String userPhone;
+  final String profilePhotoLabel;
   final ValueChanged<String> onUpdatePin;
+  final ValueChanged<String> onUpdateProfilePhoto;
   final VoidCallback onLogout;
   final VoidCallback onOpenAdmin;
 
@@ -1522,10 +1727,35 @@ class AccountScreen extends StatelessWidget {
     super.key,
     required this.userName,
     required this.userPhone,
+    required this.profilePhotoLabel,
     required this.onUpdatePin,
+    required this.onUpdateProfilePhoto,
     required this.onLogout,
     required this.onOpenAdmin,
   });
+
+  void _showLegalSheet(BuildContext context, String title, String body) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: BSColors.pureWhite,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
+              const SizedBox(height: 12),
+              Text(body, style: const TextStyle(color: BSColors.greyText, height: 1.5)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1535,17 +1765,43 @@ class AccountScreen extends StatelessWidget {
       backgroundColor: BSColors.pureWhite,
       appBar: AppBar(
         backgroundColor: BSColors.pureWhite,
-        title: const Text('ACCOUNT', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text('Account'),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text('NAME: $userName', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-          const SizedBox(height: 6),
-          Text('PHONE: $userPhone', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: BSColors.greyText)),
-          const SizedBox(height: 18),
-          const Text('CHANGE 4-DIGIT PIN', style: TextStyle(fontWeight: FontWeight.w800)),
-          const SizedBox(height: 6),
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 30,
+                backgroundColor: BSColors.softGreenBg,
+                child: const Icon(Icons.person, color: BSColors.primaryGreen, size: 30),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Name: $userName', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                    const SizedBox(height: 4),
+                    Text('Phone: $userPhone', style: const TextStyle(color: BSColors.greyText)),
+                  ],
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  onUpdateProfilePhoto('updated_profile_${DateTime.now().millisecondsSinceEpoch}.jpg');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Profile picture updated.')),
+                  );
+                },
+                child: const Text('Change Photo', style: TextStyle(color: BSColors.primaryGreen)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          const Text('Change 4-Digit PIN', style: TextStyle(fontWeight: FontWeight.w500)),
+          const SizedBox(height: 8),
           Row(
             children: [
               Expanded(
@@ -1554,8 +1810,10 @@ class AccountScreen extends StatelessWidget {
                   keyboardType: TextInputType.number,
                   maxLength: 4,
                   obscureText: true,
-                  style: const TextStyle(fontWeight: FontWeight.w800),
-                  decoration: const InputDecoration(hintText: 'NEW PIN', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                    labelText: 'New PIN',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
               ),
               const SizedBox(width: 10),
@@ -1564,42 +1822,64 @@ class AccountScreen extends StatelessWidget {
                   if (pinCtrl.text.trim().length == 4) {
                     onUpdatePin(pinCtrl.text.trim());
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('PIN UPDATED', style: TextStyle(fontWeight: FontWeight.w800))),
+                      const SnackBar(content: Text('PIN updated successfully.')),
                     );
                   }
                 },
-                child: const Text('SAVE', style: TextStyle(fontWeight: FontWeight.w800)),
+                child: const Text('Save'),
               ),
             ],
           ),
           const Divider(height: 28),
-          const Text('NOTIFICATIONS: ENABLED', style: TextStyle(fontWeight: FontWeight.w800)),
-          const SizedBox(height: 10),
-          const Text('TERMS & CONDITIONS: DIRECT STK PUSH ONLY', style: TextStyle(fontWeight: FontWeight.w800)),
-          const SizedBox(height: 10),
-          const Text('PRIVACY POLICY: SECRETS STORED ON SERVER ONLY', style: TextStyle(fontWeight: FontWeight.w800)),
-          const SizedBox(height: 20),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Policy Privacy'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showLegalSheet(
+              context,
+              'Policy Privacy',
+              'Bingwa Sokoni Data Swift collects only the details needed to process your account and bundle orders. API secrets and payment credentials remain strictly on the backend server and are never embedded inside the mobile app.',
+            ),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Terms and Conditions'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showLegalSheet(
+              context,
+              'Terms and Conditions',
+              'Orders are placed through M-Pesa STK Push prompts. Please verify the recipient phone number and bundle validity before confirming payment. Bundle fulfillment depends on payment callback verification and network provider processing.',
+            ),
+          ),
+          const SizedBox(height: 16),
           OutlinedButton(
             onPressed: () {
               Navigator.pop(context);
               onOpenAdmin();
             },
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: BSColors.primaryGreen, width: 1.6),
+              side: const BorderSide(color: BSColors.primaryGreen, width: 1.4),
             ),
-            child: const Text(
-              'ADMIN DASHBOARD',
-              style: TextStyle(fontWeight: FontWeight.w800, color: BSColors.primaryGreen),
-            ),
+            child: const Text('Admin Dashboard', style: TextStyle(color: BSColors.primaryGreen)),
           ),
           const SizedBox(height: 12),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              onLogout();
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: BSColors.dangerRed),
-            child: const Text('LOGOUT', style: TextStyle(fontWeight: FontWeight.w800)),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                onLogout();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: BSColors.dangerRed,
+                foregroundColor: BSColors.pureWhite,
+              ),
+              child: const Text(
+                'Logout',
+                style: TextStyle(color: BSColors.pureWhite),
+              ),
+            ),
           ),
         ],
       ),
@@ -1610,13 +1890,13 @@ class AccountScreen extends StatelessWidget {
 class AdminDashboardScreen extends StatefulWidget {
   final bool storeOpen;
   final List<OfferModel> offers;
-  final List<String> ads;
+  final List<AdItem> ads;
   final List<OrderRecord> orders;
   final ValueChanged<bool> onToggleStore;
   final ValueChanged<OfferModel> onAddOffer;
   final ValueChanged<OfferModel> onEditOffer;
   final ValueChanged<String> onDeleteOffer;
-  final ValueChanged<String> onAddAd;
+  final ValueChanged<AdItem> onAddAd;
   final ValueChanged<int> onRemoveAd;
 
   const AdminDashboardScreen({
@@ -1643,7 +1923,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   final _priceCtrl = TextEditingController();
   final _validityCtrl = TextEditingController();
   final _categoryCtrl = TextEditingController(text: 'DATA');
-  final _adCtrl = TextEditingController();
+  final _adTitleCtrl = TextEditingController();
+  final _adSubtitleCtrl = TextEditingController();
 
   void _addNewOffer() {
     final name = _nameCtrl.text.trim();
@@ -1659,7 +1940,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         priceLabel: 'KES $priceNum',
         fixedPriceKes: priceNum,
         validity: validity,
-        category: _categoryCtrl.text.trim().isEmpty ? 'DATA' : _categoryCtrl.text.trim().toUpperCase(),
+        category: _categoryCtrl.text.trim().isEmpty
+            ? 'DATA'
+            : _categoryCtrl.text.trim().toUpperCase(),
       ),
     );
     _nameCtrl.clear();
@@ -1672,12 +1955,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('DELETE OFFER PERMANENTLY?', style: TextStyle(fontWeight: FontWeight.w800)),
-        content: Text('${offer.network} - ${offer.name} (${offer.priceLabel})', style: const TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text('Delete Offer Permanently?'),
+        content: Text('${offer.network} - ${offer.name} (${offer.priceLabel})'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('CANCEL', style: TextStyle(fontWeight: FontWeight.w800)),
+            child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () {
@@ -1685,7 +1968,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               Navigator.pop(ctx);
               setState(() {});
             },
-            child: const Text('DELETE', style: TextStyle(fontWeight: FontWeight.w800, color: BSColors.dangerRed)),
+            child: const Text('Delete', style: TextStyle(color: BSColors.dangerRed)),
           ),
         ],
       ),
@@ -1698,21 +1981,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       backgroundColor: BSColors.pureWhite,
       appBar: AppBar(
         backgroundColor: BSColors.pureWhite,
-        title: const Text('ADMIN DASHBOARD', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text('Admin Dashboard'),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            'STATS: TOTAL OFFERS ${widget.offers.length} | LOGGED ORDERS ${widget.orders.length}',
-            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+            'Total Offers: ${widget.offers.length} | Logged Orders: ${widget.orders.length}',
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 12),
           SwitchListTile(
-            title: Text(
-              widget.storeOpen ? 'STORE STATUS: OPEN' : 'STORE STATUS: CLOSED',
-              style: const TextStyle(fontWeight: FontWeight.w800),
-            ),
+            title: Text(widget.storeOpen ? 'Store Status: Open' : 'Store Status: Closed'),
             value: widget.storeOpen,
             activeTrackColor: BSColors.primaryGreen,
             onChanged: (val) {
@@ -1721,34 +2001,43 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             },
           ),
           const Divider(height: 24),
-          const Text('MANAGE ADS', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+          const Text('Manage Ads', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _adCtrl,
-                  style: const TextStyle(fontWeight: FontWeight.w800),
-                  decoration: const InputDecoration(hintText: 'NEW AD TEXT', border: OutlineInputBorder()),
-                ),
-              ),
-              const SizedBox(width: 8),
-              ElevatedButton(
-                onPressed: () {
-                  if (_adCtrl.text.trim().isNotEmpty) {
-                    widget.onAddAd(_adCtrl.text.trim());
-                    _adCtrl.clear();
-                    setState(() {});
-                  }
-                },
-                child: const Text('ADD AD', style: TextStyle(fontWeight: FontWeight.w800)),
-              ),
-            ],
+          TextField(
+            controller: _adTitleCtrl,
+            decoration: const InputDecoration(labelText: 'Ad Title', border: OutlineInputBorder()),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _adSubtitleCtrl,
+            decoration: const InputDecoration(labelText: 'Ad Subtitle', border: OutlineInputBorder()),
+          ),
+          const SizedBox(height: 8),
+          ElevatedButton(
+            onPressed: () {
+              if (_adTitleCtrl.text.trim().isNotEmpty) {
+                widget.onAddAd(
+                  AdItem(
+                    id: 'ad_${DateTime.now().millisecondsSinceEpoch}',
+                    title: _adTitleCtrl.text.trim(),
+                    subtitle: _adSubtitleCtrl.text.trim().isEmpty
+                        ? 'Bingwa Sokoni Data Swift promotion'
+                        : _adSubtitleCtrl.text.trim(),
+                    icon: Icons.campaign,
+                  ),
+                );
+                _adTitleCtrl.clear();
+                _adSubtitleCtrl.clear();
+                setState(() {});
+              }
+            },
+            child: const Text('Add Ad'),
           ),
           ...List.generate(
             widget.ads.length,
             (i) => ListTile(
-              title: Text(widget.ads[i], style: const TextStyle(fontWeight: FontWeight.w800)),
+              title: Text(widget.ads[i].title),
+              subtitle: Text(widget.ads[i].subtitle),
               trailing: IconButton(
                 icon: const Icon(Icons.delete, color: BSColors.dangerRed),
                 onPressed: () {
@@ -1759,41 +2048,45 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
           ),
           const Divider(height: 24),
-          const Text('ADD NEW OFFER', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+          const Text('Add New Offer', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
             value: _selectedNet,
             items: const ['SAFARICOM', 'AIRTEL', 'TELKOM', 'FAIBA']
-                .map((n) => DropdownMenuItem(value: n, child: Text(n, style: const TextStyle(fontWeight: FontWeight.w800))))
+                .map((n) => DropdownMenuItem(value: n, child: Text(n)))
                 .toList(),
             onChanged: (v) => setState(() => _selectedNet = v ?? 'SAFARICOM'),
           ),
           const SizedBox(height: 8),
-          TextField(controller: _nameCtrl, style: const TextStyle(fontWeight: FontWeight.w800), decoration: const InputDecoration(hintText: 'OFFER NAME (E.G. 2GB)', border: OutlineInputBorder())),
+          TextField(
+            controller: _nameCtrl,
+            decoration: const InputDecoration(labelText: 'Offer Name (e.g. 2GB)', border: OutlineInputBorder()),
+          ),
           const SizedBox(height: 8),
-          TextField(controller: _priceCtrl, keyboardType: TextInputType.number, style: const TextStyle(fontWeight: FontWeight.w800), decoration: const InputDecoration(hintText: 'PRICE IN KES (E.G. 110)', border: OutlineInputBorder())),
+          TextField(
+            controller: _priceCtrl,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'Price in KES (e.g. 110)', border: OutlineInputBorder()),
+          ),
           const SizedBox(height: 8),
-          TextField(controller: _validityCtrl, style: const TextStyle(fontWeight: FontWeight.w800), decoration: const InputDecoration(hintText: 'VALIDITY (E.G. 24Hrs)', border: OutlineInputBorder())),
+          TextField(
+            controller: _validityCtrl,
+            decoration: const InputDecoration(labelText: 'Validity (e.g. 24Hrs)', border: OutlineInputBorder()),
+          ),
           const SizedBox(height: 10),
           ElevatedButton(
             onPressed: _addNewOffer,
-            child: const Text('ADD OFFER', style: TextStyle(fontWeight: FontWeight.w800)),
+            child: const Text('Add Offer'),
           ),
           const Divider(height: 24),
-          const Text('MANAGE OFFERS (HIDE / SHOW / DELETE)', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+          const Text('Manage Offers (Hide / Show / Delete)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
           const SizedBox(height: 8),
           ...widget.offers.map(
             (offer) => ListTile(
-              title: Text(
-                '${offer.network} | ${offer.name} (${offer.priceLabel})',
-                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
-              ),
+              title: Text('${offer.network} | ${offer.name} (${offer.priceLabel})', style: const TextStyle(fontSize: 13)),
               subtitle: Text(
-                offer.isVisible ? 'VISIBLE' : 'HIDDEN',
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  color: offer.isVisible ? BSColors.primaryGreen : BSColors.greyText,
-                ),
+                offer.isVisible ? 'Visible' : 'Hidden',
+                style: TextStyle(color: offer.isVisible ? BSColors.primaryGreen : BSColors.greyText),
               ),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
