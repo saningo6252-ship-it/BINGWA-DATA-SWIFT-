@@ -608,7 +608,7 @@ class HomeScreen extends StatelessWidget {
               color: AppColors.lightGreen,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: AppColors.primaryGreen.withValues(alpha: 0.35),
+                color: AppColors.primaryGreen.withOpacity(0.35),
               ),
             ),
             child: const Column(
