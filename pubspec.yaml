@@ -1,5 +1,5 @@
 name: bingwa_sokoni_data_swift
-description: Bundles and airtime that keep you connected.
+description: BINGWA SOKONI DATA SWIFT - Bundles and airtime that keep you connected.
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -10,6 +10,8 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
+  flutter_secure_storage: ^9.2.2
+  shared_preferences: ^2.3.3
 
 dev_dependencies:
   flutter_test:
