@@ -27,7 +27,7 @@ jobs:
           channel: 'stable'
 
       - name: Ensure Android Gradle structure
-        run: flutter create --platforms=android .
+        run: flutter create --platforms=android --project-name bingwa_sokoni_data_swift .
 
       - name: Install dependencies
         run: flutter pub get
