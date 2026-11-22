@@ -2,12 +2,13 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
-  build:
+  build-apk:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -15,23 +16,27 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
+          distribution: 'temurin'
           java-version: '17'
 
-      - name: Install Flutter
+      - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.24.0'
           channel: 'stable'
+          cache: true
 
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build debug APK
-        run: flutter build apk --debug
+      - name: Analyze project
+        run: flutter analyze
+
+      - name: Build release APK
+        run: flutter build apk --release
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: bingwa-sokoni-debug-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          name: bingwa-sokoni-data-swift-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
