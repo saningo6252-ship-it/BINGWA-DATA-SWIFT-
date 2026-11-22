@@ -27,7 +27,7 @@ class BSColors {
 
 class OfferModel {
   final String id;
-  final String network; // SAFARICOM, AIRTEL, TELKOM, FAIBA
+  final String network;
   final String name;
   final String priceLabel;
   final int? fixedPriceKes;
@@ -805,7 +805,6 @@ class HomeTabScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top bar: Left Logo + Name Bold, Right Profile Pic circle
             Row(
               children: [
                 Container(
@@ -884,7 +883,6 @@ class HomeTabScreen extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 16),
-            // Large dynamic Ad Banner
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -912,7 +910,6 @@ class HomeTabScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 14),
-            // Refer card
             GestureDetector(
               onTap: onReferTap,
               child: Container(
@@ -943,7 +940,6 @@ class HomeTabScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 18),
-            // 4 Big Company Cards Bold
             GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -965,7 +961,7 @@ class HomeTabScreen extends StatelessWidget {
                       border: Border.all(color: BSColors.cardBorder),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.06),
+                          color: Colors.black.withOpacity(0.06),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -1050,7 +1046,7 @@ class NetworkOffersScreen extends StatelessWidget {
                     border: Border.all(color: BSColors.cardBorder),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.06),
+                        color: Colors.black.withOpacity(0.06),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -1766,7 +1762,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           const Text('ADD NEW OFFER', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
-            initialValue: _selectedNet,
+            value: _selectedNet,
             items: const ['SAFARICOM', 'AIRTEL', 'TELKOM', 'FAIBA']
                 .map((n) => DropdownMenuItem(value: n, child: Text(n, style: const TextStyle(fontWeight: FontWeight.w800))))
                 .toList(),
