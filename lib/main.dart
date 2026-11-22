@@ -125,7 +125,8 @@ class Catalogue68 {
   static const String tagline = 'Bundles and airtime that keep you connected.';
   static const String whatsappPhone = '0794363801';
   static const String callPhone = '0794363801';
-  static const String whatsappGroupUrl = 'https://chat.whatsapp.com/BingwaDataSwiftGroup';
+  static const String whatsappGroupUrl =
+      'https://chat.whatsapp.com/DB9snd9pSXf9vVrTN3vhTR?s=cl&p=a&iam=2';
   static const String appDownloadBaseUrl = 'https://bingwadataswift.app/download';
 
   static const List<OfferModel> initialOffers = [
