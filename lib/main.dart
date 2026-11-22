@@ -10,10 +10,10 @@ void main() {
       statusBarIconBrightness: Brightness.dark,
     ),
   );
-  runApp(const BingwaSokoniApp());
+  runApp(const BingwaDataSwiftApp());
 }
 
-class BSColors {
+class BDSColors {
   static const Color pureWhite = Color(0xFFFFFFFF);
   static const Color primaryGreen = Color(0xFF008A55);
   static const Color softGreenBg = Color(0xFFEAF7F0);
@@ -121,12 +121,12 @@ class OrderRecord {
 }
 
 class Catalogue68 {
-  static const String appName = 'BINGWA SOKONI DATA SWIFT';
+  static const String appName = 'BINGWA DATA SWIFT';
   static const String tagline = 'Bundles and airtime that keep you connected.';
   static const String whatsappPhone = '0794363801';
   static const String callPhone = '0794363801';
   static const String whatsappGroupUrl = 'https://chat.whatsapp.com/BingwaDataSwiftGroup';
-  static const String appDownloadBaseUrl = 'https://bingwasokoni.app/download';
+  static const String appDownloadBaseUrl = 'https://bingwadataswift.app/download';
 
   static const List<OfferModel> initialOffers = [
     // SAFARICOM DATA/COMBO (24)
@@ -245,14 +245,14 @@ Future<void> openWhatsAppGroupDirect(BuildContext context) async {
   }
 }
 
-class BingwaSokoniApp extends StatefulWidget {
-  const BingwaSokoniApp({super.key});
+class BingwaDataSwiftApp extends StatefulWidget {
+  const BingwaDataSwiftApp({super.key});
 
   @override
-  State<BingwaSokoniApp> createState() => _BingwaSokoniAppState();
+  State<BingwaDataSwiftApp> createState() => _BingwaDataSwiftAppState();
 }
 
-class _BingwaSokoniAppState extends State<BingwaSokoniApp> {
+class _BingwaDataSwiftAppState extends State<BingwaDataSwiftApp> {
   bool _showSplash = true;
   bool _isAuthenticated = false;
   String _userName = 'Bingwa User';
@@ -272,7 +272,7 @@ class _BingwaSokoniAppState extends State<BingwaSokoniApp> {
     const AdItem(
       id: 'ad_2',
       title: 'Safaricom, Airtel, Telkom & Faiba',
-      subtitle: 'Choose your network and confirm your recipient number easily.',
+      subtitle: 'Select your network and confirm your recipient number easily.',
       icon: Icons.wifi_tethering,
     ),
   ];
@@ -324,24 +324,22 @@ class _BingwaSokoniAppState extends State<BingwaSokoniApp> {
       title: Catalogue68.appName,
       theme: ThemeData(
         useMaterial3: true,
-        scaffoldBackgroundColor: BSColors.pureWhite,
+        scaffoldBackgroundColor: BDSColors.pureWhite,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: BSColors.primaryGreen,
-          primary: BSColors.primaryGreen,
-          surface: BSColors.pureWhite,
+          seedColor: BDSColors.primaryGreen,
+          primary: BDSColors.primaryGreen,
+          surface: BDSColors.pureWhite,
         ),
         textTheme: const TextTheme(
-          bodyLarge: TextStyle(fontWeight: FontWeight.normal, color: BSColors.blackText),
-          bodyMedium: TextStyle(fontWeight: FontWeight.normal, color: BSColors.blackText),
-          titleMedium: TextStyle(fontWeight: FontWeight.w500, color: BSColors.blackText),
+          bodyLarge: TextStyle(fontWeight: FontWeight.normal, color: BDSColors.blackText),
+          bodyMedium: TextStyle(fontWeight: FontWeight.normal, color: BDSColors.blackText),
+          titleMedium: TextStyle(fontWeight: FontWeight.w500, color: BDSColors.blackText),
         ),
       ),
       home: _showSplash
           ? const SplashScreen()
           : !_isAuthenticated
-              ? AuthScreen(
-                  onSuccess: _onLoginSuccess,
-                )
+              ? AuthScreen(onSuccess: _onLoginSuccess)
               : MainShellScreen(
                   userName: _userName,
                   userPhone: _userPhone,
@@ -379,7 +377,7 @@ class SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: BSColors.pureWhite,
+      backgroundColor: BDSColors.pureWhite,
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -390,14 +388,14 @@ class SplashScreen extends StatelessWidget {
                 width: 96,
                 height: 96,
                 decoration: BoxDecoration(
-                  color: BSColors.softGreenBg,
+                  color: BDSColors.softGreenBg,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: BSColors.primaryGreen, width: 1.5),
+                  border: Border.all(color: BDSColors.primaryGreen, width: 1.5),
                 ),
                 child: const Icon(
                   Icons.bolt,
                   size: 52,
-                  color: BSColors.primaryGreen,
+                  color: BDSColors.primaryGreen,
                 ),
               ),
               const SizedBox(height: 20),
@@ -407,7 +405,7 @@ class SplashScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w500,
-                  color: BSColors.blackText,
+                  color: BDSColors.blackText,
                 ),
               ),
               const SizedBox(height: 8),
@@ -417,7 +415,7 @@ class SplashScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.normal,
-                  color: BSColors.greyText,
+                  color: BDSColors.greyText,
                 ),
               ),
             ],
@@ -459,10 +457,10 @@ class _AuthScreenState extends State<AuthScreen> {
 
   void _uploadProfilePicture() {
     setState(() {
-      _selectedPhotoName = 'profile_photo_selected.jpg';
+      _selectedPhotoName = 'profile_photo_${DateTime.now().millisecondsSinceEpoch}.jpg';
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Profile picture selected for your account.')),
+      const SnackBar(content: Text('Profile picture selected.')),
     );
   }
 
@@ -531,7 +529,7 @@ class _AuthScreenState extends State<AuthScreen> {
         : (_isLoginMode ? 'Welcome Back' : 'Create Account');
 
     return Scaffold(
-      backgroundColor: BSColors.pureWhite,
+      backgroundColor: BDSColors.pureWhite,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -560,8 +558,8 @@ class _AuthScreenState extends State<AuthScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
                               color: _isLoginMode && !_forgotPinMode
-                                  ? BSColors.primaryGreen
-                                  : BSColors.lightGreyPill,
+                                  ? BDSColors.primaryGreen
+                                  : BDSColors.lightGreyPill,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Center(
@@ -570,8 +568,8 @@ class _AuthScreenState extends State<AuthScreen> {
                                 style: TextStyle(
                                   fontWeight: FontWeight.w500,
                                   color: _isLoginMode && !_forgotPinMode
-                                      ? BSColors.pureWhite
-                                      : BSColors.blackText,
+                                      ? BDSColors.pureWhite
+                                      : BDSColors.blackText,
                                 ),
                               ),
                             ),
@@ -590,8 +588,8 @@ class _AuthScreenState extends State<AuthScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
                               color: !_isLoginMode && !_forgotPinMode
-                                  ? BSColors.primaryGreen
-                                  : BSColors.lightGreyPill,
+                                  ? BDSColors.primaryGreen
+                                  : BDSColors.lightGreyPill,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Center(
@@ -600,8 +598,8 @@ class _AuthScreenState extends State<AuthScreen> {
                                 style: TextStyle(
                                   fontWeight: FontWeight.w500,
                                   color: !_isLoginMode && !_forgotPinMode
-                                      ? BSColors.pureWhite
-                                      : BSColors.blackText,
+                                      ? BDSColors.pureWhite
+                                      : BDSColors.blackText,
                                 ),
                               ),
                             ),
@@ -617,10 +615,10 @@ class _AuthScreenState extends State<AuthScreen> {
                       children: [
                         CircleAvatar(
                           radius: 36,
-                          backgroundColor: BSColors.softGreenBg,
+                          backgroundColor: BDSColors.softGreenBg,
                           child: Icon(
                             _selectedPhotoName.isEmpty ? Icons.camera_alt : Icons.check,
-                            color: BSColors.primaryGreen,
+                            color: BDSColors.primaryGreen,
                             size: 28,
                           ),
                         ),
@@ -630,7 +628,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               ? 'Upload Profile Picture'
                               : 'Profile Picture Selected',
                           style: const TextStyle(
-                            color: BSColors.primaryGreen,
+                            color: BDSColors.primaryGreen,
                             fontSize: 13,
                           ),
                         ),
@@ -705,7 +703,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     Text(
                       _error,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: BSColors.dangerRed),
+                      style: const TextStyle(color: BDSColors.dangerRed),
                     ),
                   ],
                   const SizedBox(height: 14),
@@ -729,7 +727,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     }),
                     child: Text(
                       _forgotPinMode ? 'Back to Login' : 'Forgot PIN with OTP?',
-                      style: const TextStyle(color: BSColors.primaryGreen),
+                      style: const TextStyle(color: BDSColors.primaryGreen),
                     ),
                   ),
                 ],
@@ -860,14 +858,14 @@ class _MainShellScreenState extends State<MainShellScreen> {
     ];
 
     return Scaffold(
-      backgroundColor: BSColors.pureWhite,
+      backgroundColor: BDSColors.pureWhite,
       body: pages[_navIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _navIndex,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: BSColors.pureWhite,
-        selectedItemColor: BSColors.primaryGreen,
-        unselectedItemColor: BSColors.blackText,
+        backgroundColor: BDSColors.pureWhite,
+        selectedItemColor: BDSColors.primaryGreen,
+        unselectedItemColor: BDSColors.blackText,
         onTap: (idx) => setState(() => _navIndex = idx),
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
@@ -904,15 +902,15 @@ class HomeTabScreen extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
-            color: BSColors.softGreenBg,
+            color: BDSColors.softGreenBg,
             borderRadius: BorderRadius.circular(20),
           ),
           child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.cell_tower, size: 16, color: BSColors.primaryGreen),
+              Icon(Icons.cell_tower, size: 16, color: BDSColors.primaryGreen),
               SizedBox(width: 5),
-              Text('Safaricom', style: TextStyle(color: BSColors.primaryGreen, fontSize: 12)),
+              Text('Safaricom', style: TextStyle(color: BDSColors.primaryGreen, fontSize: 12)),
             ],
           ),
         );
@@ -926,9 +924,9 @@ class HomeTabScreen extends StatelessWidget {
           child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.signal_cellular_alt, size: 16, color: BSColors.dangerRed),
+              Icon(Icons.signal_cellular_alt, size: 16, color: BDSColors.dangerRed),
               SizedBox(width: 5),
-              Text('Airtel', style: TextStyle(color: BSColors.dangerRed, fontSize: 12)),
+              Text('Airtel', style: TextStyle(color: BDSColors.dangerRed, fontSize: 12)),
             ],
           ),
         );
@@ -952,15 +950,15 @@ class HomeTabScreen extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
-            color: BSColors.amberBg,
+            color: BDSColors.amberBg,
             borderRadius: BorderRadius.circular(20),
           ),
           child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.router, size: 16, color: BSColors.amberText),
+              Icon(Icons.router, size: 16, color: BDSColors.amberText),
               SizedBox(width: 5),
-              Text('Faiba', style: TextStyle(color: BSColors.amberText, fontSize: 12)),
+              Text('Faiba', style: TextStyle(color: BDSColors.amberText, fontSize: 12)),
             ],
           ),
         );
@@ -983,10 +981,10 @@ class HomeTabScreen extends StatelessWidget {
                   width: 38,
                   height: 38,
                   decoration: BoxDecoration(
-                    color: BSColors.softGreenBg,
+                    color: BDSColors.softGreenBg,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.bolt, color: BSColors.primaryGreen),
+                  child: const Icon(Icons.bolt, color: BDSColors.primaryGreen),
                 ),
                 const SizedBox(width: 10),
                 const Expanded(
@@ -999,10 +997,10 @@ class HomeTabScreen extends StatelessWidget {
                   onTap: onProfileTap,
                   child: CircleAvatar(
                     radius: 20,
-                    backgroundColor: BSColors.primaryGreen,
+                    backgroundColor: BDSColors.primaryGreen,
                     child: Icon(
                       profilePhotoLabel.isNotEmpty ? Icons.person : Icons.account_circle,
-                      color: BSColors.pureWhite,
+                      color: BDSColors.pureWhite,
                     ),
                   ),
                 ),
@@ -1016,7 +1014,7 @@ class HomeTabScreen extends StatelessWidget {
             const SizedBox(height: 4),
             const Text(
               Catalogue68.tagline,
-              style: TextStyle(fontSize: 14, color: BSColors.greyText),
+              style: TextStyle(fontSize: 14, color: BDSColors.greyText),
             ),
             if (!storeOpen) ...[
               const SizedBox(height: 12),
@@ -1024,12 +1022,12 @@ class HomeTabScreen extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: BSColors.amberBg,
+                  color: BDSColors.amberBg,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Text(
                   'Store Closed: Browse only. No orders right now.',
-                  style: TextStyle(color: BSColors.amberText, fontSize: 13),
+                  style: TextStyle(color: BDSColors.amberText, fontSize: 13),
                 ),
               ),
             ],
@@ -1046,9 +1044,9 @@ class HomeTabScreen extends StatelessWidget {
                     width: 280,
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: BSColors.softGreenBg,
+                      color: BDSColors.softGreenBg,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: BSColors.primaryGreen),
+                      border: Border.all(color: BDSColors.primaryGreen),
                     ),
                     child: Row(
                       children: [
@@ -1056,10 +1054,10 @@ class HomeTabScreen extends StatelessWidget {
                           width: 56,
                           height: 56,
                           decoration: BoxDecoration(
-                            color: BSColors.pureWhite,
+                            color: BDSColors.pureWhite,
                             borderRadius: BorderRadius.circular(14),
                           ),
-                          child: Icon(ad.icon, size: 30, color: BSColors.primaryGreen),
+                          child: Icon(ad.icon, size: 30, color: BDSColors.primaryGreen),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -1076,7 +1074,7 @@ class HomeTabScreen extends StatelessWidget {
                                 ad.subtitle,
                                 maxLines: 3,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontSize: 12, color: BSColors.greyText),
+                                style: const TextStyle(fontSize: 12, color: BDSColors.greyText),
                               ),
                             ],
                           ),
@@ -1104,9 +1102,9 @@ class HomeTabScreen extends StatelessWidget {
                   onTap: () => onNetworkTap(company),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: BSColors.pureWhite,
+                      color: BDSColors.pureWhite,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: BSColors.cardBorder),
+                      border: Border.all(color: BDSColors.cardBorder),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.05),
@@ -1157,9 +1155,9 @@ class NetworkOffersScreen extends StatelessWidget {
         offers.where((o) => o.network == network && o.isVisible).toList();
 
     return Scaffold(
-      backgroundColor: BSColors.pureWhite,
+      backgroundColor: BDSColors.pureWhite,
       appBar: AppBar(
-        backgroundColor: BSColors.pureWhite,
+        backgroundColor: BDSColors.pureWhite,
         title: Text(network),
       ),
       body: Column(
@@ -1167,11 +1165,11 @@ class NetworkOffersScreen extends StatelessWidget {
           if (!storeOpen)
             Container(
               width: double.infinity,
-              color: BSColors.amberBg,
+              color: BDSColors.amberBg,
               padding: const EdgeInsets.all(10),
               child: const Text(
                 'Store Closed: Browse only',
-                style: TextStyle(color: BSColors.amberText),
+                style: TextStyle(color: BDSColors.amberText),
               ),
             ),
           Expanded(
@@ -1184,9 +1182,9 @@ class NetworkOffersScreen extends StatelessWidget {
                 return Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: BSColors.pureWhite,
+                    color: BDSColors.pureWhite,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: BSColors.cardBorder),
+                    border: Border.all(color: BDSColors.cardBorder),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.05),
@@ -1201,10 +1199,10 @@ class NetworkOffersScreen extends StatelessWidget {
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
-                          color: BSColors.softGreenBg,
+                          color: BDSColors.softGreenBg,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(Icons.card_giftcard, color: BSColors.primaryGreen),
+                        child: const Icon(Icons.card_giftcard, color: BDSColors.primaryGreen),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -1215,7 +1213,7 @@ class NetworkOffersScreen extends StatelessWidget {
                             const SizedBox(height: 4),
                             Text(
                               '${item.priceLabel}  •  ${item.validity}',
-                              style: const TextStyle(fontSize: 13, color: BSColors.greyText),
+                              style: const TextStyle(fontSize: 13, color: BDSColors.greyText),
                             ),
                           ],
                         ),
@@ -1237,9 +1235,9 @@ class NetworkOffersScreen extends StatelessWidget {
                               }
                             : null,
                         style: OutlinedButton.styleFrom(
-                          backgroundColor: BSColors.pureWhite,
-                          foregroundColor: BSColors.primaryGreen,
-                          side: const BorderSide(color: BSColors.primaryGreen, width: 1.4),
+                          backgroundColor: BDSColors.pureWhite,
+                          foregroundColor: BDSColors.primaryGreen,
+                          side: const BorderSide(color: BDSColors.primaryGreen, width: 1.4),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         child: const Text('Buy'),
@@ -1344,9 +1342,9 @@ class _BuyConfirmScreenState extends State<BuyConfirmScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: BSColors.pureWhite,
+      backgroundColor: BDSColors.pureWhite,
       appBar: AppBar(
-        backgroundColor: BSColors.pureWhite,
+        backgroundColor: BDSColors.pureWhite,
         title: const Text('Buy / Confirm'),
       ),
       body: SingleChildScrollView(
@@ -1360,9 +1358,9 @@ class _BuyConfirmScreenState extends State<BuyConfirmScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: BSColors.pureWhite,
+                  color: BDSColors.pureWhite,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: BSColors.cardBorder),
+                  border: Border.all(color: BDSColors.cardBorder),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1373,7 +1371,7 @@ class _BuyConfirmScreenState extends State<BuyConfirmScreen> {
                     const SizedBox(height: 6),
                     Text(
                       'Price: ${widget.offer.priceLabel} (${widget.offer.validity})',
-                      style: const TextStyle(color: BSColors.primaryGreen),
+                      style: const TextStyle(color: BDSColors.primaryGreen),
                     ),
                   ],
                 ),
@@ -1426,12 +1424,12 @@ class _BuyConfirmScreenState extends State<BuyConfirmScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: BSColors.amberBg,
+                    color: BDSColors.amberBg,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     _statusMsg,
-                    style: const TextStyle(color: BSColors.amberText),
+                    style: const TextStyle(color: BDSColors.amberText),
                   ),
                 ),
               ],
@@ -1459,23 +1457,23 @@ class _ReferTabScreenState extends State<ReferTabScreen> {
       _generatedLink = '${Catalogue68.appDownloadBaseUrl}?share=$token';
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('App download referral link generated.')),
+      const SnackBar(content: Text('App download link generated.')),
     );
   }
 
   void _copyLink() {
     Clipboard.setData(ClipboardData(text: _generatedLink));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Referral download link copied.')),
+      const SnackBar(content: Text('App download link copied.')),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: BSColors.pureWhite,
+      backgroundColor: BDSColors.pureWhite,
       appBar: AppBar(
-        backgroundColor: BSColors.pureWhite,
+        backgroundColor: BDSColors.pureWhite,
         title: const Text('Refer'),
       ),
       body: ListView(
@@ -1483,20 +1481,20 @@ class _ReferTabScreenState extends State<ReferTabScreen> {
         children: [
           const Text(
             'Share the App Download Link',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: BSColors.primaryGreen),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: BDSColors.primaryGreen),
           ),
           const SizedBox(height: 8),
           const Text(
-            'Generate a direct download link for Bingwa Sokoni Data Swift and share it with friends so they can download the app.',
-            style: TextStyle(color: BSColors.greyText),
+            'Generate a download link for Bingwa Data Swift and share it with friends so they can download the app.',
+            style: TextStyle(color: BDSColors.greyText),
           ),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: BSColors.softGreenBg,
+              color: BDSColors.softGreenBg,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: BSColors.primaryGreen),
+              border: Border.all(color: BDSColors.primaryGreen),
             ),
             child: SelectableText(
               _generatedLink,
@@ -1519,21 +1517,21 @@ class _ReferTabScreenState extends State<ReferTabScreen> {
             height: 46,
             child: OutlinedButton.icon(
               onPressed: _copyLink,
-              icon: const Icon(Icons.copy, color: BSColors.primaryGreen),
-              label: const Text('Copy Download Link', style: TextStyle(color: BSColors.primaryGreen)),
+              icon: const Icon(Icons.copy, color: BDSColors.primaryGreen),
+              label: const Text('Copy Download Link', style: TextStyle(color: BDSColors.primaryGreen)),
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: BSColors.primaryGreen),
+                side: const BorderSide(color: BDSColors.primaryGreen),
               ),
             ),
           ),
           const SizedBox(height: 20),
-          const Text('How Sharing Works', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+          const Text('How It Works', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
           const SizedBox(height: 8),
           const Text('1. Tap Generate Download Link to create a fresh app download link.'),
           const SizedBox(height: 6),
-          const Text('2. Tap Copy Download Link and paste it in WhatsApp, SMS, or social chats.'),
+          const Text('2. Tap Copy Download Link and paste it in your chats.'),
           const SizedBox(height: 6),
-          const Text('3. Friends use the link directly to download Bingwa Sokoni Data Swift.'),
+          const Text('3. Friends open the link directly to download Bingwa Data Swift.'),
         ],
       ),
     );
@@ -1553,15 +1551,15 @@ class HistoryTabScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: BSColors.pureWhite,
+      backgroundColor: BDSColors.pureWhite,
       appBar: AppBar(
-        backgroundColor: BSColors.pureWhite,
+        backgroundColor: BDSColors.pureWhite,
         title: const Text('History'),
         actions: [
           if (orders.isNotEmpty)
             TextButton(
               onPressed: onClearOrders,
-              child: const Text('Clear', style: TextStyle(color: BSColors.dangerRed)),
+              child: const Text('Clear', style: TextStyle(color: BDSColors.dangerRed)),
             ),
         ],
       ),
@@ -1572,14 +1570,14 @@ class HistoryTabScreen extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: const [
-                    Icon(Icons.receipt_long, size: 48, color: BSColors.greyText),
+                    Icon(Icons.receipt_long, size: 48, color: BDSColors.greyText),
                     SizedBox(height: 12),
                     Text('No orders recorded yet.', style: TextStyle(fontSize: 16)),
                     SizedBox(height: 6),
                     Text(
                       'Your M-Pesa STK Push order history, payment status, and delivery status will appear here.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: BSColors.greyText),
+                      style: TextStyle(color: BDSColors.greyText),
                     ),
                   ],
                 ),
@@ -1594,9 +1592,9 @@ class HistoryTabScreen extends StatelessWidget {
                 return Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: BSColors.pureWhite,
+                    color: BDSColors.pureWhite,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: BSColors.cardBorder),
+                    border: Border.all(color: BDSColors.cardBorder),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1611,9 +1609,9 @@ class HistoryTabScreen extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text('Payment Ref: ${o.paymentRef}'),
                       const SizedBox(height: 4),
-                      Text('Payment Status: ${o.paymentStatus}', style: const TextStyle(color: BSColors.amberText)),
+                      Text('Payment Status: ${o.paymentStatus}', style: const TextStyle(color: BDSColors.amberText)),
                       const SizedBox(height: 4),
-                      Text('Delivery Status: ${o.deliveryStatus}', style: const TextStyle(color: BSColors.greyText)),
+                      Text('Delivery Status: ${o.deliveryStatus}', style: const TextStyle(color: BDSColors.greyText)),
                     ],
                   ),
                 );
@@ -1629,9 +1627,9 @@ class SupportTabScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: BSColors.pureWhite,
+      backgroundColor: BDSColors.pureWhite,
       appBar: AppBar(
-        backgroundColor: BSColors.pureWhite,
+        backgroundColor: BDSColors.pureWhite,
         title: const Text('Support'),
       ),
       body: ListView(
@@ -1639,12 +1637,12 @@ class SupportTabScreen extends StatelessWidget {
         children: [
           const Text(
             'Customer Support',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: BSColors.primaryGreen),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: BDSColors.primaryGreen),
           ),
           const SizedBox(height: 6),
           const Text(
             'Need help with an order or bundle request? Reach out directly using the buttons below.',
-            style: TextStyle(color: BSColors.greyText),
+            style: TextStyle(color: BDSColors.greyText),
           ),
           const SizedBox(height: 18),
           SizedBox(
@@ -1662,10 +1660,10 @@ class SupportTabScreen extends StatelessWidget {
             height: 50,
             child: OutlinedButton.icon(
               onPressed: () => openCallDirect(context),
-              icon: const Icon(Icons.call, color: BSColors.primaryGreen),
-              label: const Text('Call', style: TextStyle(color: BSColors.primaryGreen)),
+              icon: const Icon(Icons.call, color: BDSColors.primaryGreen),
+              label: const Text('Call', style: TextStyle(color: BDSColors.primaryGreen)),
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: BSColors.primaryGreen, width: 1.4),
+                side: const BorderSide(color: BDSColors.primaryGreen, width: 1.4),
               ),
             ),
           ),
@@ -1685,9 +1683,9 @@ class SupportTabScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: BSColors.pureWhite,
+              color: BDSColors.pureWhite,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: BSColors.cardBorder),
+              border: Border.all(color: BDSColors.cardBorder),
             ),
             child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1695,15 +1693,15 @@ class SupportTabScreen extends StatelessWidget {
                 Text('Direct M-Pesa STK Push', style: TextStyle(fontWeight: FontWeight.w500)),
                 SizedBox(height: 4),
                 Text(
-                  'All payments are initiated via M-Pesa STK Push and confirmed through server callback verification.',
-                  style: TextStyle(color: BSColors.greyText, fontSize: 13),
+                  'Payments are initiated via M-Pesa STK Push and verified through server callback confirmation.',
+                  style: TextStyle(color: BDSColors.greyText, fontSize: 13),
                 ),
                 SizedBox(height: 12),
-                Text('Wrong Recipient Number', style: TextStyle(fontWeight: FontWeight.w500)),
+                Text('Recipient Number Check', style: TextStyle(fontWeight: FontWeight.w500)),
                 SizedBox(height: 4),
                 Text(
-                  'Double-check the recipient phone number before confirming payment so bundles reach the right line.',
-                  style: TextStyle(color: BSColors.greyText, fontSize: 13),
+                  'Confirm the recipient phone number carefully before approving your M-Pesa STK Push prompt.',
+                  style: TextStyle(color: BDSColors.greyText, fontSize: 13),
                 ),
               ],
             ),
@@ -1737,7 +1735,7 @@ class AccountScreen extends StatelessWidget {
   void _showLegalSheet(BuildContext context, String title, String body) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: BSColors.pureWhite,
+      backgroundColor: BDSColors.pureWhite,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -1749,7 +1747,7 @@ class AccountScreen extends StatelessWidget {
             children: [
               Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
               const SizedBox(height: 12),
-              Text(body, style: const TextStyle(color: BSColors.greyText, height: 1.5)),
+              Text(body, style: const TextStyle(color: BDSColors.greyText, height: 1.5)),
             ],
           ),
         ),
@@ -1762,9 +1760,9 @@ class AccountScreen extends StatelessWidget {
     final pinCtrl = TextEditingController();
 
     return Scaffold(
-      backgroundColor: BSColors.pureWhite,
+      backgroundColor: BDSColors.pureWhite,
       appBar: AppBar(
-        backgroundColor: BSColors.pureWhite,
+        backgroundColor: BDSColors.pureWhite,
         title: const Text('Account'),
       ),
       body: ListView(
@@ -1774,8 +1772,8 @@ class AccountScreen extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 30,
-                backgroundColor: BSColors.softGreenBg,
-                child: const Icon(Icons.person, color: BSColors.primaryGreen, size: 30),
+                backgroundColor: BDSColors.softGreenBg,
+                child: const Icon(Icons.person, color: BDSColors.primaryGreen, size: 30),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -1784,7 +1782,7 @@ class AccountScreen extends StatelessWidget {
                   children: [
                     Text('Name: $userName', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
                     const SizedBox(height: 4),
-                    Text('Phone: $userPhone', style: const TextStyle(color: BSColors.greyText)),
+                    Text('Phone: $userPhone', style: const TextStyle(color: BDSColors.greyText)),
                   ],
                 ),
               ),
@@ -1795,7 +1793,7 @@ class AccountScreen extends StatelessWidget {
                     const SnackBar(content: Text('Profile picture updated.')),
                   );
                 },
-                child: const Text('Change Photo', style: TextStyle(color: BSColors.primaryGreen)),
+                child: const Text('Change Photo', style: TextStyle(color: BDSColors.primaryGreen)),
               ),
             ],
           ),
@@ -1838,7 +1836,7 @@ class AccountScreen extends StatelessWidget {
             onTap: () => _showLegalSheet(
               context,
               'Policy Privacy',
-              'Bingwa Sokoni Data Swift collects only the details needed to process your account and bundle orders. API secrets and payment credentials remain strictly on the backend server and are never embedded inside the mobile app.',
+              'Bingwa Data Swift uses only the information required to manage your account and process bundle requests. Payment credentials and API secrets are stored exclusively on the backend server and never inside the mobile app.',
             ),
           ),
           ListTile(
@@ -1848,7 +1846,7 @@ class AccountScreen extends StatelessWidget {
             onTap: () => _showLegalSheet(
               context,
               'Terms and Conditions',
-              'Orders are placed through M-Pesa STK Push prompts. Please verify the recipient phone number and bundle validity before confirming payment. Bundle fulfillment depends on payment callback verification and network provider processing.',
+              'Orders are initiated through M-Pesa STK Push. Check the recipient phone number, bundle details, and validity period before confirming payment. Fulfillment depends on payment callback verification and network processing.',
             ),
           ),
           const SizedBox(height: 16),
@@ -1858,9 +1856,9 @@ class AccountScreen extends StatelessWidget {
               onOpenAdmin();
             },
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: BSColors.primaryGreen, width: 1.4),
+              side: const BorderSide(color: BDSColors.primaryGreen, width: 1.4),
             ),
-            child: const Text('Admin Dashboard', style: TextStyle(color: BSColors.primaryGreen)),
+            child: const Text('Admin Dashboard', style: TextStyle(color: BDSColors.primaryGreen)),
           ),
           const SizedBox(height: 12),
           SizedBox(
@@ -1872,12 +1870,12 @@ class AccountScreen extends StatelessWidget {
                 onLogout();
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: BSColors.dangerRed,
-                foregroundColor: BSColors.pureWhite,
+                backgroundColor: BDSColors.dangerRed,
+                foregroundColor: BDSColors.pureWhite,
               ),
               child: const Text(
                 'Logout',
-                style: TextStyle(color: BSColors.pureWhite),
+                style: TextStyle(color: BDSColors.pureWhite),
               ),
             ),
           ),
@@ -1968,7 +1966,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               Navigator.pop(ctx);
               setState(() {});
             },
-            child: const Text('Delete', style: TextStyle(color: BSColors.dangerRed)),
+            child: const Text('Delete', style: TextStyle(color: BDSColors.dangerRed)),
           ),
         ],
       ),
@@ -1978,9 +1976,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: BSColors.pureWhite,
+      backgroundColor: BDSColors.pureWhite,
       appBar: AppBar(
-        backgroundColor: BSColors.pureWhite,
+        backgroundColor: BDSColors.pureWhite,
         title: const Text('Admin Dashboard'),
       ),
       body: ListView(
@@ -1994,7 +1992,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           SwitchListTile(
             title: Text(widget.storeOpen ? 'Store Status: Open' : 'Store Status: Closed'),
             value: widget.storeOpen,
-            activeTrackColor: BSColors.primaryGreen,
+            activeTrackColor: BDSColors.primaryGreen,
             onChanged: (val) {
               widget.onToggleStore(val);
               setState(() {});
@@ -2021,7 +2019,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     id: 'ad_${DateTime.now().millisecondsSinceEpoch}',
                     title: _adTitleCtrl.text.trim(),
                     subtitle: _adSubtitleCtrl.text.trim().isEmpty
-                        ? 'Bingwa Sokoni Data Swift promotion'
+                        ? 'Bingwa Data Swift promotion'
                         : _adSubtitleCtrl.text.trim(),
                     icon: Icons.campaign,
                   ),
@@ -2039,7 +2037,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               title: Text(widget.ads[i].title),
               subtitle: Text(widget.ads[i].subtitle),
               trailing: IconButton(
-                icon: const Icon(Icons.delete, color: BSColors.dangerRed),
+                icon: const Icon(Icons.delete, color: BDSColors.dangerRed),
                 onPressed: () {
                   widget.onRemoveAd(i);
                   setState(() {});
@@ -2086,7 +2084,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               title: Text('${offer.network} | ${offer.name} (${offer.priceLabel})', style: const TextStyle(fontSize: 13)),
               subtitle: Text(
                 offer.isVisible ? 'Visible' : 'Hidden',
-                style: TextStyle(color: offer.isVisible ? BSColors.primaryGreen : BSColors.greyText),
+                style: TextStyle(color: offer.isVisible ? BDSColors.primaryGreen : BDSColors.greyText),
               ),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -2099,7 +2097,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     },
                   ),
                   IconButton(
-                    icon: const Icon(Icons.delete, color: BSColors.dangerRed),
+                    icon: const Icon(Icons.delete, color: BDSColors.dangerRed),
                     onPressed: () => _confirmDelete(offer),
                   ),
                 ],
