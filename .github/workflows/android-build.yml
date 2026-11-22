@@ -29,6 +29,15 @@ jobs:
       - name: Ensure Android Gradle structure
         run: flutter create --platforms=android --project-name bingwa_sokoni_data_swift .
 
+      - name: Update Kotlin Gradle plugin version
+        run: |
+          if [ -f android/settings.gradle ]; then
+            sed -i -E 's/(id "org\.jetbrains\.kotlin\.android" version ")[0-9.]+(")/\12.0.20\2/g' android/settings.gradle
+          fi
+          if [ -f android/settings.gradle.kts ]; then
+            sed -i -E 's/(id\("org\.jetbrains\.kotlin\.android"\) version ")[0-9.]+(")/\12.0.20\2/g' android/settings.gradle.kts
+          fi
+
       - name: Install dependencies
         run: flutter pub get
 
