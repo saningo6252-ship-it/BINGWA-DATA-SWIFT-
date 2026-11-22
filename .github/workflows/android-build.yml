@@ -32,6 +32,16 @@ jobs:
             flutter create . --platforms=android --project-name bingwa_data_swift
           fi
 
+      - name: Update Kotlin version in Android project
+        run: |
+          if [ -f "android/settings.gradle" ]; then
+            sed -i 's/org.jetbrains.kotlin.android" version "[0-9.]*"/org.jetbrains.kotlin.android" version "1.9.22"/g' android/settings.gradle
+          fi
+          if [ -f "android/build.gradle" ]; then
+            sed -i "s/ext.kotlin_version = '[^']*'/ext.kotlin_version = '1.9.22'/g" android/build.gradle
+            sed -i 's/ext.kotlin_version = "[^"]*"/ext.kotlin_version = "1.9.22"/g' android/build.gradle
+          fi
+
       - name: Install dependencies
         run: flutter pub get
 
