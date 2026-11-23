@@ -29,7 +29,7 @@ jobs:
       - name: Ensure Android Gradle structure
         run: flutter create --platforms=android --project-name bingwa_data_swift .
 
-      - name: Update Kotlin version in Android Gradle files
+      - name: Configure Kotlin 2.0.20 and Android SDK 34
         run: |
           python3 - <<'PY'
           import os, re
@@ -44,9 +44,13 @@ jobs:
                           txt = f.read()
                       orig = txt
                       txt = re.sub(r'(id\s+"org\.jetbrains\.kotlin\.android"\s+version\s+")[0-9.]+(")', rf'\g<1>{kotlin_ver}\g<2>', txt)
-                      txt = re.sub(r"(id\(\"org\.jetbrains\.kotlin\.android\"\)\s+version\s+\")[0-9.]+(\")", rf'\g<1>{kotlin_ver}\g<2>', txt)
+                      txt = re.sub(r'(id\("org\.jetbrains\.kotlin\.android"\)\s+version\s+")[0-9.]+(")', rf'\g<1>{kotlin_ver}\g<2>', txt)
                       txt = re.sub(r"(ext\.kotlin_version\s*=\s*['\"])[0-9.]+(['\"])", rf"\g<1>{kotlin_ver}\g<2>", txt)
                       txt = re.sub(r"(kotlin_version\s*=\s*['\"])[0-9.]+(['\"])", rf"\g<1>{kotlin_ver}\g<2>", txt)
+                      txt = re.sub(r"\bcompileSdk\s*=?\s*(?:flutter\.compileSdkVersion|\d+)", "compileSdk = 34", txt)
+                      txt = re.sub(r"\bcompileSdkVersion\s+(?:flutter\.compileSdkVersion|\d+)", "compileSdkVersion 34", txt)
+                      txt = re.sub(r"\btargetSdk\s*=?\s*(?:flutter\.targetSdkVersion|\d+)", "targetSdk = 34", txt)
+                      txt = re.sub(r"\btargetSdkVersion\s+(?:flutter\.targetSdkVersion|\d+)", "targetSdkVersion 34", txt)
                       if txt != orig:
                           with open(fpath, "w", encoding="utf-8") as f:
                               f.write(txt)
@@ -57,11 +61,9 @@ jobs:
               with open(bg, "r", encoding="utf-8") as f:
                   b = f.read()
               if "ext.kotlin_version" not in b:
-                  ext_block = f"buildscript {{\n    ext.kotlin_version = '{kotlin_ver}'\n}}\n"
-                  b = ext_block + b
+                  b = f"buildscript {{\n    ext.kotlin_version = '{kotlin_ver}'\n}}\n" + b
                   with open(bg, "w", encoding="utf-8") as f:
                       f.write(b)
-                  print("Added ext.kotlin_version to android/build.gradle")
           PY
 
       - name: Set App Name and Apply Custom Icon
