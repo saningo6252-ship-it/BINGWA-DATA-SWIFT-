@@ -29,7 +29,7 @@ jobs:
       - name: Ensure Android Gradle structure
         run: flutter create --platforms=android --project-name bingwa_data_swift .
 
-      - name: Configure Kotlin 2.0.20 and SDK 34
+      - name: Force Kotlin 2.0.20 and compileSdk 35 across Gradle files
         run: |
           python3 - <<'PY'
           import os, re
@@ -38,43 +38,40 @@ jobs:
 
           for root, _, files in os.walk("android"):
               for fname in files:
-                  if fname in ("build.gradle", "build.gradle.kts", "settings.gradle", "settings.gradle.kts"):
+                  if fname in ("build.gradle", "build.gradle.kts", "settings.gradle", "settings.gradle.kts", "gradle.properties"):
                       fpath = os.path.join(root, fname)
                       with open(fpath, "r", encoding="utf-8") as f:
                           txt = f.read()
                       orig = txt
 
-                      # Update Kotlin Gradle plugin versions in plugins {}
                       txt = re.sub(
                           r'(org\.jetbrains\.kotlin\.android["\']?\s*(?:version)?\s*[:=]?\s*["\'])[0-9.]+(["\'])',
                           rf'\g<1>{kotlin_ver}\g<2>',
                           txt,
                       )
-                      # Update ext.kotlin_version or kotlin_version
+                      txt = re.sub(
+                          r'(org\.jetbrains\.kotlin["\']?\s*(?:version)?\s*[:=]?\s*["\'])[0-9.]+(["\'])',
+                          rf'\g<1>{kotlin_ver}\g<2>',
+                          txt,
+                      )
                       txt = re.sub(
                           r"((?:ext\.)?kotlin_version\s*=\s*['\"])[0-9.]+(['\"])",
                           rf"\g<1>{kotlin_ver}\g<2>",
                           txt,
                       )
-                      # Force compileSdk and targetSdk to 34 to avoid android-35/android.jar aapt2 issue
+                      txt = re.sub(
+                          r"(kotlinVersion\s*=\s*['\"])[0-9.]+(['\"])",
+                          rf"\g<1>{kotlin_ver}\g<2>",
+                          txt,
+                      )
                       txt = re.sub(
                           r"\bcompileSdk\s*=?\s*(?:flutter\.compileSdkVersion|\d+)",
-                          "compileSdk = 34",
+                          "compileSdk = 35",
                           txt,
                       )
                       txt = re.sub(
                           r"\bcompileSdkVersion\s+(?:flutter\.compileSdkVersion|\d+)",
-                          "compileSdkVersion 34",
-                          txt,
-                      )
-                      txt = re.sub(
-                          r"\btargetSdk\s*=?\s*(?:flutter\.targetSdkVersion|\d+)",
-                          "targetSdk = 34",
-                          txt,
-                      )
-                      txt = re.sub(
-                          r"\btargetSdkVersion\s+(?:flutter\.targetSdkVersion|\d+)",
-                          "targetSdkVersion 34",
+                          "compileSdkVersion 35",
                           txt,
                       )
 
@@ -91,17 +88,6 @@ jobs:
                   b = f"buildscript {{\n    ext.kotlin_version = '{kotlin_ver}'\n}}\n" + b
                   with open(bg, "w", encoding="utf-8") as f:
                       f.write(b)
-
-          for check in [
-              "android/settings.gradle",
-              "android/build.gradle",
-              "android/app/build.gradle",
-              "android/app/build.gradle.kts",
-          ]:
-              if os.path.exists(check):
-                  print(f"--- {check} ---")
-                  with open(check, "r", encoding="utf-8") as f:
-                      print(f.read())
           PY
 
       - name: Set App Name and Apply Custom Icon
