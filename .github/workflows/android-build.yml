@@ -29,7 +29,7 @@ jobs:
       - name: Ensure Android Gradle structure
         run: flutter create --platforms=android --project-name bingwa_data_swift .
 
-      - name: Configure Kotlin 2.0.20 and SDK 34
+      - name: Force Kotlin 2.0.20 across Gradle files
         run: |
           python3 - <<'PY'
           import os, re
@@ -62,26 +62,6 @@ jobs:
                       txt = re.sub(
                           r"(kotlinVersion\s*=\s*['\"])[0-9.]+(['\"])",
                           rf"\g<1>{kotlin_ver}\g<2>",
-                          txt,
-                      )
-                      txt = re.sub(
-                          r"\bcompileSdk\s*=?\s*(?:flutter\.compileSdkVersion|\d+)",
-                          "compileSdk = 34",
-                          txt,
-                      )
-                      txt = re.sub(
-                          r"\bcompileSdkVersion\s+(?:flutter\.compileSdkVersion|\d+)",
-                          "compileSdkVersion 34",
-                          txt,
-                      )
-                      txt = re.sub(
-                          r"\btargetSdk\s*=?\s*(?:flutter\.targetSdkVersion|\d+)",
-                          "targetSdk = 34",
-                          txt,
-                      )
-                      txt = re.sub(
-                          r"\btargetSdkVersion\s+(?:flutter\.targetSdkVersion|\d+)",
-                          "targetSdkVersion 34",
                           txt,
                       )
 
