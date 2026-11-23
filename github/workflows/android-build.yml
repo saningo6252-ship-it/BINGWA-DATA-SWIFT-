@@ -2,11 +2,12 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
-  build-apk:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -24,13 +25,88 @@ jobs:
         with:
           flutter-version: '3.24.0'
           channel: 'stable'
-          cache: true
+
+      - name: Ensure Android Gradle structure
+        run: flutter create --platforms=android --project-name bingwa_data_swift .
+
+      - name: Update Kotlin Gradle plugin and ext.kotlin_version
+        run: |
+          python3 - <<'PY'
+          import os, re
+
+          kotlin_ver = "2.0.20"
+
+          settings_gradle = "android/settings.gradle"
+          if os.path.exists(settings_gradle):
+              with open(settings_gradle, "r", encoding="utf-8") as f:
+                  s = f.read()
+              s = re.sub(r'(id "org\.jetbrains\.kotlin\.android" version ")[0-9.]+(")', rf'\g<1>{kotlin_ver}\g<2>', s)
+              with open(settings_gradle, "w", encoding="utf-8") as f:
+                  f.write(s)
+
+          settings_kts = "android/settings.gradle.kts"
+          if os.path.exists(settings_kts):
+              with open(settings_kts, "r", encoding="utf-8") as f:
+                  s = f.read()
+              s = re.sub(r'(id\("org\.jetbrains\.kotlin\.android"\) version ")[0-9.]+(")', rf'\g<1>{kotlin_ver}\g<2>', s)
+              with open(settings_kts, "w", encoding="utf-8") as f:
+                  f.write(s)
+
+          build_gradle = "android/build.gradle"
+          if os.path.exists(build_gradle):
+              with open(build_gradle, "r", encoding="utf-8") as f:
+                  b = f.read()
+              if re.search(r'ext\.kotlin_version\s*=', b):
+                  b = re.sub(r"(ext\.kotlin_version\s*=\s*['\"])[0-9.]+(['\"])", rf"\g<1>{kotlin_ver}\g<2>", b)
+              elif "buildscript {" in b:
+                  b = re.sub(
+                      r"(buildscript\s*\{\s*)",
+                      rf"\1ext.kotlin_version = '{kotlin_ver}'\n    ",
+                      b,
+                      count=1,
+                  )
+              else:
+                  b = f"buildscript {{\n    ext.kotlin_version = '{kotlin_ver}'\n}}\n" + b
+              with open(build_gradle, "w", encoding="utf-8") as f:
+                  f.write(b)
+          PY
+
+      - name: Set App Name and Apply Custom Icon
+        run: |
+          python3 - <<'PY'
+          import os, re, shutil, subprocess
+
+          manifest_path = "android/app/src/main/AndroidManifest.xml"
+          if os.path.exists(manifest_path):
+              with open(manifest_path, "r", encoding="utf-8") as f:
+                  content = f.read()
+              content = re.sub(r'android:label="[^"]*"', 'android:label="BINGWA DATA SWIFT"', content)
+              with open(manifest_path, "w", encoding="utf-8") as f:
+                  f.write(content)
+
+          anydpi_dir = "android/app/src/main/mipmap-anydpi-v26"
+          if os.path.isdir(anydpi_dir):
+              shutil.rmtree(anydpi_dir)
+
+          src_icon = "assets/app_icon.png"
+          densities = [
+              "mipmap-mdpi",
+              "mipmap-hdpi",
+              "mipmap-xhdpi",
+              "mipmap-xxhdpi",
+              "mipmap-xxxhdpi",
+          ]
+          if os.path.exists(src_icon):
+              for folder in densities:
+                  out_dir = os.path.join("android/app/src/main", folder)
+                  os.makedirs(out_dir, exist_ok=True)
+                  for name in ["ic_launcher.png", "ic_launcher_round.png", "ic_launcher_foreground.png"]:
+                      dst = os.path.join(out_dir, name)
+                      subprocess.run(["cp", src_icon, dst], check=True)
+          PY
 
       - name: Install dependencies
         run: flutter pub get
-
-      - name: Analyze project
-        run: flutter analyze
 
       - name: Build release APK
         run: flutter build apk --release
@@ -38,5 +114,5 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: bingwa-sokoni-data-swift-release-apk
+          name: bingwa-data-swift-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
