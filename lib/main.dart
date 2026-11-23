@@ -1,8 +1,11 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 void main() {
@@ -83,20 +86,63 @@ class OfferModel {
       isVisible: isVisible ?? this.isVisible,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'network': network,
+        'name': name,
+        'priceLabel': priceLabel,
+        'fixedPriceKes': fixedPriceKes,
+        'minKes': minKes,
+        'maxKes': maxKes,
+        'validity': validity,
+        'category': category,
+        'isVisible': isVisible,
+      };
+
+  factory OfferModel.fromJson(Map<String, dynamic> json) => OfferModel(
+        id: json['id'] as String,
+        network: json['network'] as String,
+        name: json['name'] as String,
+        priceLabel: json['priceLabel'] as String,
+        fixedPriceKes: json['fixedPriceKes'] as int?,
+        minKes: json['minKes'] as int?,
+        maxKes: json['maxKes'] as int?,
+        validity: json['validity'] as String,
+        category: json['category'] as String,
+        isVisible: (json['isVisible'] as bool?) ?? true,
+      );
 }
 
 class AdItem {
   final String id;
   final String title;
   final String subtitle;
-  final IconData icon;
+  final int iconCodePoint;
 
   const AdItem({
     required this.id,
     required this.title,
     required this.subtitle,
-    required this.icon,
+    required this.iconCodePoint,
   });
+
+  IconData get icon => IconData(iconCodePoint, fontFamily: 'MaterialIcons');
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'title': title,
+        'subtitle': subtitle,
+        'iconCodePoint': iconCodePoint,
+      };
+
+  factory AdItem.fromJson(Map<String, dynamic> json) => AdItem(
+        id: json['id'] as String,
+        title: json['title'] as String,
+        subtitle: json['subtitle'] as String,
+        iconCodePoint:
+            (json['iconCodePoint'] as int?) ?? Icons.campaign.codePoint,
+      );
 }
 
 class OrderRecord {
@@ -123,6 +169,32 @@ class OrderRecord {
     required this.paymentStatus,
     required this.deliveryStatus,
   });
+
+  Map<String, dynamic> toJson() => {
+        'orderId': orderId,
+        'network': network,
+        'bundleName': bundleName,
+        'recipientPhone': recipientPhone,
+        'paymentPhone': paymentPhone,
+        'amountKes': amountKes,
+        'paymentRef': paymentRef,
+        'dateLabel': dateLabel,
+        'paymentStatus': paymentStatus,
+        'deliveryStatus': deliveryStatus,
+      };
+
+  factory OrderRecord.fromJson(Map<String, dynamic> json) => OrderRecord(
+        orderId: json['orderId'] as String,
+        network: json['network'] as String,
+        bundleName: json['bundleName'] as String,
+        recipientPhone: json['recipientPhone'] as String,
+        paymentPhone: json['paymentPhone'] as String,
+        amountKes: json['amountKes'] as int,
+        paymentRef: json['paymentRef'] as String,
+        dateLabel: json['dateLabel'] as String,
+        paymentStatus: json['paymentStatus'] as String,
+        deliveryStatus: json['deliveryStatus'] as String,
+      );
 }
 
 class Catalogue68 {
@@ -134,7 +206,8 @@ class Catalogue68 {
   static const String adminAccessCode = '2026';
   static const String whatsappGroupUrl =
       'https://chat.whatsapp.com/DB9snd9pSXf9vVrTN3vhTR?s=cl&p=a&iam=2';
-  static const String appDownloadBaseUrl = 'https://bingwadataswift.app/download';
+  static const String appDownloadBaseUrl =
+      'https://bingwadataswift.app/download';
 
   static const List<OfferModel> initialOffers = [
     OfferModel(id: 's_dc_1', network: 'SAFARICOM', name: '10MB+7SMS', priceLabel: 'KES 8', fixedPriceKes: 8, validity: '24Hrs', category: 'DATA/COMBO'),
@@ -208,6 +281,133 @@ class Catalogue68 {
   ];
 }
 
+class LocalStorageService {
+  static const _secureStorage = FlutterSecureStorage();
+  static const _kPinKey = 'bds_user_pin';
+  static const _kUserName = 'bds_user_name';
+  static const _kUserPhone = 'bds_user_phone';
+  static const _kProfilePhoto = 'bds_profile_photo';
+  static const _kStoreOpen = 'bds_store_open';
+  static const _kOffersJson = 'bds_offers_json';
+  static const _kAdsJson = 'bds_ads_json';
+  static const _kOrdersJson = 'bds_orders_json';
+
+  static Future<String> readPin() async {
+    try {
+      final stored = await _secureStorage.read(key: _kPinKey);
+      if (stored != null && stored.length == 4) return stored;
+    } catch (_) {}
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_kPinKey) ?? '1234';
+  }
+
+  static Future<void> savePin(String pin) async {
+    try {
+      await _secureStorage.write(key: _kPinKey, value: pin);
+    } catch (_) {}
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kPinKey, pin);
+  }
+
+  static Future> readProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    return {
+      'name': prefs.getString(_kUserName),
+      'phone': prefs.getString(_kUserPhone),
+      'photo': prefs.getString(_kProfilePhoto),
+    };
+  }
+
+  static Future<void> saveProfile({
+    String? name,
+    String? phone,
+    String? photoPath,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (name != null) await prefs.setString(_kUserName, name);
+    if (phone != null) await prefs.setString(_kUserPhone, phone);
+    if (photoPath != null) await prefs.setString(_kProfilePhoto, photoPath);
+  }
+
+  static Future<bool> readStoreOpen() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_kStoreOpen) ?? true;
+  }
+
+  static Future<void> saveStoreOpen(bool open) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kStoreOpen, open);
+  }
+
+  static Future<List<OfferModel>> readOffers() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_kOffersJson);
+    if (raw == null || raw.isEmpty) {
+      return List<OfferModel>.from(Catalogue68.initialOffers);
+    }
+    try {
+      final list = jsonDecode(raw) as List<dynamic>;
+      return list
+          .map((e) => OfferModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      return List<OfferModel>.from(Catalogue68.initialOffers);
+    }
+  }
+
+  static Future<void> saveOffers(List<OfferModel> offers) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _kOffersJson,
+      jsonEncode(offers.map((o) => o.toJson()).toList()),
+    );
+  }
+
+  static Future<List<AdItem>> readAds(List<AdItem> defaults) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_kAdsJson);
+    if (raw == null || raw.isEmpty) return List<AdItem>.from(defaults);
+    try {
+      final list = jsonDecode(raw) as List<dynamic>;
+      return list
+          .map((e) => AdItem.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      return List<AdItem>.from(defaults);
+    }
+  }
+
+  static Future<void> saveAds(List<AdItem> ads) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _kAdsJson,
+      jsonEncode(ads.map((a) => a.toJson()).toList()),
+    );
+  }
+
+  static Future<List<OrderRecord>> readOrders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_kOrdersJson);
+    if (raw == null || raw.isEmpty) return [];
+    try {
+      final list = jsonDecode(raw) as List<dynamic>;
+      return list
+          .map((e) => OrderRecord.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  static Future<void> saveOrders(List<OrderRecord> orders) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _kOrdersJson,
+      jsonEncode(orders.map((o) => o.toJson()).toList()),
+    );
+  }
+}
+
 String _normalizePhone(String input) {
   final digits = input.replaceAll(RegExp(r'\D'), '');
   if (digits.startsWith('254') && digits.length == 12) {
@@ -228,9 +428,7 @@ Future<String?> pickImageFromGallery(BuildContext context) async {
       source: ImageSource.gallery,
       imageQuality: 85,
     );
-    if (picked == null) {
-      return null;
-    }
+    if (picked == null) return null;
     return picked.path;
   } catch (_) {
     if (context.mounted) {
@@ -248,7 +446,9 @@ Widget buildAvatarWidget({
   Color bgColor = BDSColors.softGreenBg,
   Color iconColor = BDSColors.primaryGreen,
 }) {
-  if (imagePath != null && imagePath.isNotEmpty && File(imagePath).existsSync()) {
+  if (imagePath != null &&
+      imagePath.isNotEmpty &&
+      File(imagePath).existsSync()) {
     return CircleAvatar(
       radius: radius,
       backgroundColor: bgColor,
@@ -264,7 +464,8 @@ Widget buildAvatarWidget({
 
 Future<void> openWhatsAppDirect(BuildContext context) async {
   final digits = Catalogue68.whatsappPhone.replaceAll(RegExp(r'\D'), '');
-  final international = digits.startsWith('0') ? '254${digits.substring(1)}' : digits;
+  final international =
+      digits.startsWith('0') ? '254${digits.substring(1)}' : digits;
   final uri = Uri.parse('https://wa.me/$international');
   final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
   if (!launched && context.mounted) {
@@ -302,6 +503,21 @@ class BingwaDataSwiftApp extends StatefulWidget {
 }
 
 class _BingwaDataSwiftAppState extends State<BingwaDataSwiftApp> {
+  static final List<AdItem> _defaultAds = [
+    AdItem(
+      id: 'ad_1',
+      title: 'Fast Data & Minutes Across Networks',
+      subtitle: 'Instant M-Pesa STK Push checkout with clear bundle details.',
+      iconCodePoint: Icons.bolt.codePoint,
+    ),
+    AdItem(
+      id: 'ad_2',
+      title: 'Safaricom, Airtel, Telkom & Faiba',
+      subtitle: 'Select your network and confirm your recipient number easily.',
+      iconCodePoint: Icons.wifi_tethering.codePoint,
+    ),
+  ];
+
   bool _showSplash = true;
   bool _isAuthenticated = false;
   bool _isAdmin = false;
@@ -312,25 +528,13 @@ class _BingwaDataSwiftAppState extends State<BingwaDataSwiftApp> {
   bool _storeOpen = true;
 
   List<OfferModel> _offers = List<OfferModel>.from(Catalogue68.initialOffers);
-  List<AdItem> _ads = [
-    const AdItem(
-      id: 'ad_1',
-      title: 'Fast Data & Minutes Across Networks',
-      subtitle: 'Instant M-Pesa STK Push checkout with clear bundle details.',
-      icon: Icons.bolt,
-    ),
-    const AdItem(
-      id: 'ad_2',
-      title: 'Safaricom, Airtel, Telkom & Faiba',
-      subtitle: 'Select your network and confirm your recipient number easily.',
-      icon: Icons.wifi_tethering,
-    ),
-  ];
-  final List<OrderRecord> _orders = [];
+  List<AdItem> _ads = List<AdItem>.from(_defaultAds);
+  List<OrderRecord> _orders = [];
 
   @override
   void initState() {
     super.initState();
+    _loadPersistedData();
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) {
         setState(() => _showSplash = false);
@@ -338,28 +542,65 @@ class _BingwaDataSwiftAppState extends State<BingwaDataSwiftApp> {
     });
   }
 
-  void _onLoginSuccess({
+  Future<void> _loadPersistedData() async {
+    final profile = await LocalStorageService.readProfile();
+    final pin = await LocalStorageService.readPin();
+    final storeOpen = await LocalStorageService.readStoreOpen();
+    final offers = await LocalStorageService.readOffers();
+    final ads = await LocalStorageService.readAds(_defaultAds);
+    final orders = await LocalStorageService.readOrders();
+
+    if (!mounted) return;
+    setState(() {
+      if (profile['name'] != null && profile['name']!.isNotEmpty) {
+        _userName = profile['name']!;
+      }
+      if (profile['phone'] != null && profile['phone']!.isNotEmpty) {
+        _userPhone = profile['phone']!;
+      }
+      if (profile['photo'] != null && profile['photo']!.isNotEmpty) {
+        _profilePhotoPath = profile['photo'];
+      }
+      _userPin = pin;
+      _storeOpen = storeOpen;
+      _offers = offers;
+      _ads = ads;
+      _orders = orders;
+    });
+  }
+
+  Future<void> _onLoginSuccess({
     String? name,
     String? phone,
     String? pin,
     String? profilePhotoPath,
-  }) {
+  }) async {
     final resolvedPhone = (phone != null && phone.trim().isNotEmpty)
         ? phone.trim()
         : _userPhone;
-    final resolvedPin = (pin != null && pin.length == 4)
-        ? pin
-        : _userPin;
+    final resolvedPin =
+        (pin != null && pin.length == 4) ? pin : _userPin;
+    final resolvedName = (name != null && name.trim().isNotEmpty)
+        ? name.trim()
+        : _userName;
+    final resolvedPhoto =
+        (profilePhotoPath != null && profilePhotoPath.isNotEmpty)
+            ? profilePhotoPath
+            : _profilePhotoPath;
 
+    await LocalStorageService.saveProfile(
+      name: resolvedName,
+      phone: resolvedPhone,
+      photoPath: resolvedPhoto,
+    );
+    await LocalStorageService.savePin(resolvedPin);
+
+    if (!mounted) return;
     setState(() {
-      if (name != null && name.trim().isNotEmpty) {
-        _userName = name.trim();
-      }
+      _userName = resolvedName;
       _userPhone = resolvedPhone;
       _userPin = resolvedPin;
-      if (profilePhotoPath != null && profilePhotoPath.isNotEmpty) {
-        _profilePhotoPath = profilePhotoPath;
-      }
+      _profilePhotoPath = resolvedPhoto;
       _isAdmin = _checkIsAdmin(resolvedPhone, resolvedPin);
       _isAuthenticated = true;
     });
@@ -370,6 +611,78 @@ class _BingwaDataSwiftAppState extends State<BingwaDataSwiftApp> {
       _isAuthenticated = false;
       _isAdmin = false;
     });
+  }
+
+  Future<void> _handleUpdatePin(String newPin) async {
+    await LocalStorageService.savePin(newPin);
+    if (!mounted) return;
+    setState(() {
+      _userPin = newPin;
+      _isAdmin = _checkIsAdmin(_userPhone, newPin);
+    });
+  }
+
+  Future<void> _handleUpdateProfilePhoto(String path) async {
+    await LocalStorageService.saveProfile(photoPath: path);
+    if (!mounted) return;
+    setState(() => _profilePhotoPath = path);
+  }
+
+  Future<void> _handleToggleStore(bool open) async {
+    await LocalStorageService.saveStoreOpen(open);
+    if (!mounted) return;
+    setState(() => _storeOpen = open);
+  }
+
+  Future<void> _handleAddOffer(OfferModel offer) async {
+    final updated = [offer, ..._offers];
+    await LocalStorageService.saveOffers(updated);
+    if (!mounted) return;
+    setState(() => _offers = updated);
+  }
+
+  Future<void> _handleEditOffer(OfferModel updatedOffer) async {
+    final updated = _offers
+        .map((o) => o.id == updatedOffer.id ? updatedOffer : o)
+        .toList();
+    await LocalStorageService.saveOffers(updated);
+    if (!mounted) return;
+    setState(() => _offers = updated);
+  }
+
+  Future<void> _handleDeleteOffer(String id) async {
+    final updated = _offers.where((o) => o.id != id).toList();
+    await LocalStorageService.saveOffers(updated);
+    if (!mounted) return;
+    setState(() => _offers = updated);
+  }
+
+  Future<void> _handleAddAd(AdItem ad) async {
+    final updated = [..._ads, ad];
+    await LocalStorageService.saveAds(updated);
+    if (!mounted) return;
+    setState(() => _ads = updated);
+  }
+
+  Future<void> _handleRemoveAd(int index) async {
+    if (index < 0 || index >= _ads.length) return;
+    final updated = List<AdItem>.from(_ads)..removeAt(index);
+    await LocalStorageService.saveAds(updated);
+    if (!mounted) return;
+    setState(() => _ads = updated);
+  }
+
+  Future<void> _handleRecordStkAttempt(OrderRecord order) async {
+    final updated = [order, ..._orders];
+    await LocalStorageService.saveOrders(updated);
+    if (!mounted) return;
+    setState(() => _orders = updated);
+  }
+
+  Future<void> _handleClearOrders() async {
+    await LocalStorageService.saveOrders([]);
+    if (!mounted) return;
+    setState(() => _orders = []);
   }
 
   @override
@@ -389,19 +702,26 @@ class _BingwaDataSwiftAppState extends State<BingwaDataSwiftApp> {
           style: ElevatedButton.styleFrom(
             backgroundColor: BDSColors.primaryGreen,
             foregroundColor: BDSColors.pureWhite,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
         textTheme: const TextTheme(
-          bodyLarge: TextStyle(fontWeight: FontWeight.normal, color: BDSColors.blackText),
-          bodyMedium: TextStyle(fontWeight: FontWeight.normal, color: BDSColors.blackText),
-          titleMedium: TextStyle(fontWeight: FontWeight.w500, color: BDSColors.blackText),
+          bodyLarge:
+              TextStyle(fontWeight: FontWeight.normal, color: BDSColors.blackText),
+          bodyMedium:
+              TextStyle(fontWeight: FontWeight.normal, color: BDSColors.blackText),
+          titleMedium:
+              TextStyle(fontWeight: FontWeight.w500, color: BDSColors.blackText),
         ),
       ),
       home: _showSplash
           ? const SplashScreen()
           : !_isAuthenticated
-              ? AuthScreen(onSuccess: _onLoginSuccess)
+              ? AuthScreen(
+                  initialPhotoPath: _profilePhotoPath,
+                  onSuccess: _onLoginSuccess,
+                )
               : MainShellScreen(
                   userName: _userName,
                   userPhone: _userPhone,
@@ -412,28 +732,16 @@ class _BingwaDataSwiftAppState extends State<BingwaDataSwiftApp> {
                   ads: _ads,
                   orders: _orders,
                   onLogout: _onLogout,
-                  onUpdatePin: (newPin) {
-                    setState(() {
-                      _userPin = newPin;
-                      _isAdmin = _checkIsAdmin(_userPhone, newPin);
-                    });
-                  },
-                  onUpdateProfilePhoto: (path) => setState(() => _profilePhotoPath = path),
-                  onToggleStore: (open) => setState(() => _storeOpen = open),
-                  onAddOffer: (offer) => setState(() => _offers.insert(0, offer)),
-                  onEditOffer: (updated) {
-                    setState(() {
-                      final idx = _offers.indexWhere((o) => o.id == updated.id);
-                      if (idx != -1) _offers[idx] = updated;
-                    });
-                  },
-                  onDeleteOffer: (id) {
-                    setState(() => _offers.removeWhere((o) => o.id == id));
-                  },
-                  onAddAd: (ad) => setState(() => _ads.add(ad)),
-                  onRemoveAd: (index) => setState(() => _ads.removeAt(index)),
-                  onRecordStkAttempt: (order) => setState(() => _orders.insert(0, order)),
-                  onClearOrders: () => setState(() => _orders.clear()),
+                  onUpdatePin: _handleUpdatePin,
+                  onUpdateProfilePhoto: _handleUpdateProfilePhoto,
+                  onToggleStore: _handleToggleStore,
+                  onAddOffer: _handleAddOffer,
+                  onEditOffer: _handleEditOffer,
+                  onDeleteOffer: _handleDeleteOffer,
+                  onAddAd: _handleAddAd,
+                  onRemoveAd: _handleRemoveAd,
+                  onRecordStkAttempt: _handleRecordStkAttempt,
+                  onClearOrders: _handleClearOrders,
                 ),
     );
   }
@@ -458,7 +766,10 @@ class SplashScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: BDSColors.softGreenBg,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: BDSColors.lightGreenAccent, width: 1.5),
+                  border: Border.all(
+                    color: BDSColors.lightGreenAccent,
+                    width: 1.5,
+                  ),
                 ),
                 child: const Icon(
                   Icons.bolt,
@@ -495,6 +806,7 @@ class SplashScreen extends StatelessWidget {
 }
 
 class AuthScreen extends StatefulWidget {
+  final String? initialPhotoPath;
   final void Function({
     String? name,
     String? phone,
@@ -504,6 +816,7 @@ class AuthScreen extends StatefulWidget {
 
   const AuthScreen({
     super.key,
+    this.initialPhotoPath,
     required this.onSuccess,
   });
 
@@ -522,6 +835,21 @@ class _AuthScreenState extends State<AuthScreen> {
   final _otpCtrl = TextEditingController();
   final _pinCtrl = TextEditingController();
   String _error = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedPhotoPath = widget.initialPhotoPath;
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _phoneCtrl.dispose();
+    _otpCtrl.dispose();
+    _pinCtrl.dispose();
+    super.dispose();
+  }
 
   Future<void> _uploadProfilePicture() async {
     final path = await pickImageFromGallery(context);
@@ -552,8 +880,12 @@ class _AuthScreenState extends State<AuthScreen> {
     final pin = _pinCtrl.text.trim();
 
     if (_forgotPinMode) {
-      if (phone.length < 9 || _otpCtrl.text.trim().length < 4 || pin.length != 4) {
-        setState(() => _error = 'Enter phone number, OTP, and a new 4-digit PIN.');
+      if (phone.length < 9 ||
+          _otpCtrl.text.trim().length < 4 ||
+          pin.length != 4) {
+        setState(
+          () => _error = 'Enter phone number, OTP, and a new 4-digit PIN.',
+        );
         return;
       }
       widget.onSuccess(
@@ -579,7 +911,9 @@ class _AuthScreenState extends State<AuthScreen> {
           phone.length < 9 ||
           _otpCtrl.text.trim().length < 4 ||
           pin.length != 4) {
-        setState(() => _error = 'Complete name, phone number, OTP, and 4-digit PIN.');
+        setState(
+          () => _error = 'Complete name, phone number, OTP, and 4-digit PIN.',
+        );
         return;
       }
       widget.onSuccess(
@@ -702,7 +1036,10 @@ class _AuthScreenState extends State<AuthScreen> {
                   const SizedBox(height: 16),
                   Text(
                     titleText,
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   const SizedBox(height: 14),
                   if (!_isLoginMode && !_forgotPinMode) ...[
@@ -790,7 +1127,9 @@ class _AuthScreenState extends State<AuthScreen> {
                       _error = '';
                     }),
                     child: Text(
-                      _forgotPinMode ? 'Back to Login' : 'Forgot PIN with OTP?',
+                      _forgotPinMode
+                          ? 'Back to Login'
+                          : 'Forgot PIN with OTP?',
                       style: const TextStyle(color: BDSColors.primaryGreen),
                     ),
                   ),
@@ -940,7 +1279,10 @@ class _MainShellScreenState extends State<MainShellScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.link), label: 'Refer'),
           BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
-          BottomNavigationBarItem(icon: Icon(Icons.support_agent), label: 'Support'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.support_agent),
+            label: 'Support',
+          ),
         ],
       ),
     );
@@ -979,7 +1321,10 @@ class HomeTabScreen extends StatelessWidget {
             children: [
               Icon(Icons.cell_tower, size: 16, color: BDSColors.primaryGreen),
               SizedBox(width: 5),
-              Text('Safaricom', style: TextStyle(color: BDSColors.primaryGreen, fontSize: 12)),
+              Text(
+                'Safaricom',
+                style: TextStyle(color: BDSColors.primaryGreen, fontSize: 12),
+              ),
             ],
           ),
         );
@@ -993,9 +1338,16 @@ class HomeTabScreen extends StatelessWidget {
           child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.signal_cellular_alt, size: 16, color: BDSColors.dangerRed),
+              Icon(
+                Icons.signal_cellular_alt,
+                size: 16,
+                color: BDSColors.dangerRed,
+              ),
               SizedBox(width: 5),
-              Text('Airtel', style: TextStyle(color: BDSColors.dangerRed, fontSize: 12)),
+              Text(
+                'Airtel',
+                style: TextStyle(color: BDSColors.dangerRed, fontSize: 12),
+              ),
             ],
           ),
         );
@@ -1011,7 +1363,10 @@ class HomeTabScreen extends StatelessWidget {
             children: [
               Icon(Icons.network_cell, size: 16, color: Color(0xFF1D4ED8)),
               SizedBox(width: 5),
-              Text('Telkom', style: TextStyle(color: Color(0xFF1D4ED8), fontSize: 12)),
+              Text(
+                'Telkom',
+                style: TextStyle(color: Color(0xFF1D4ED8), fontSize: 12),
+              ),
             ],
           ),
         );
@@ -1027,7 +1382,10 @@ class HomeTabScreen extends StatelessWidget {
             children: [
               Icon(Icons.router, size: 16, color: BDSColors.amberText),
               SizedBox(width: 5),
-              Text('Faiba', style: TextStyle(color: BDSColors.amberText, fontSize: 12)),
+              Text(
+                'Faiba',
+                style: TextStyle(color: BDSColors.amberText, fontSize: 12),
+              ),
             ],
           ),
         );
@@ -1074,9 +1432,9 @@ class HomeTabScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Welcome Back',
-              style: TextStyle(fontSize: 21, fontWeight: FontWeight.w500),
+            Text(
+              'Welcome Back, $userName',
+              style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 4),
             const Text(
@@ -1124,7 +1482,11 @@ class HomeTabScreen extends StatelessWidget {
                             color: BDSColors.pureWhite,
                             borderRadius: BorderRadius.circular(14),
                           ),
-                          child: Icon(ad.icon, size: 30, color: BDSColors.primaryGreen),
+                          child: Icon(
+                            ad.icon,
+                            size: 30,
+                            color: BDSColors.primaryGreen,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -1134,14 +1496,20 @@ class HomeTabScreen extends StatelessWidget {
                             children: [
                               Text(
                                 ad.title,
-                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 ad.subtitle,
                                 maxLines: 3,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontSize: 12, color: BDSColors.greyText),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: BDSColors.greyText,
+                                ),
                               ),
                             ],
                           ),
@@ -1174,7 +1542,7 @@ class HomeTabScreen extends StatelessWidget {
                       border: Border.all(color: BDSColors.cardBorder),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 8,
                           offset: const Offset(0, 3),
                         ),
@@ -1187,7 +1555,10 @@ class HomeTabScreen extends StatelessWidget {
                         const SizedBox(height: 10),
                         Text(
                           company,
-                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ],
                     ),
@@ -1254,7 +1625,7 @@ class NetworkOffersScreen extends StatelessWidget {
                     border: Border.all(color: BDSColors.cardBorder),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 8,
                         offset: const Offset(0, 3),
                       ),
@@ -1269,18 +1640,30 @@ class NetworkOffersScreen extends StatelessWidget {
                           color: BDSColors.softGreenBg,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(Icons.card_giftcard, color: BDSColors.primaryGreen),
+                        child: const Icon(
+                          Icons.card_giftcard,
+                          color: BDSColors.primaryGreen,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(item.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+                            Text(
+                              item.name,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                             const SizedBox(height: 4),
                             Text(
                               '${item.priceLabel}  •  ${item.validity}',
-                              style: const TextStyle(fontSize: 13, color: BDSColors.greyText),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: BDSColors.greyText,
+                              ),
                             ),
                           ],
                         ),
@@ -1304,8 +1687,13 @@ class NetworkOffersScreen extends StatelessWidget {
                         style: OutlinedButton.styleFrom(
                           backgroundColor: BDSColors.pureWhite,
                           foregroundColor: BDSColors.primaryGreen,
-                          side: const BorderSide(color: BDSColors.primaryGreen, width: 1.4),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          side: const BorderSide(
+                            color: BDSColors.primaryGreen,
+                            width: 1.4,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         child: const Text('Buy'),
                       ),
@@ -1352,6 +1740,14 @@ class _BuyConfirmScreenState extends State<BuyConfirmScreen> {
     }
   }
 
+  @override
+  void dispose() {
+    _recipientCtrl.dispose();
+    _paymentCtrl.dispose();
+    _amountCtrl.dispose();
+    super.dispose();
+  }
+
   String? _validatePhone(String? v) {
     final clean = (v ?? '').replaceAll(RegExp(r'\s+'), '');
     if (!RegExp(r'^(?:\+254|254|0)(?:7\d{8}|1\d{8})$').hasMatch(clean)) {
@@ -1377,7 +1773,9 @@ class _BuyConfirmScreenState extends State<BuyConfirmScreen> {
 
   void _confirmAndPay() {
     if (!widget.storeOpen) {
-      setState(() => _statusMsg = 'Store is currently closed. Orders are disabled.');
+      setState(
+        () => _statusMsg = 'Store is currently closed. Orders are disabled.',
+      );
       return;
     }
     if (!_formKey.currentState!.validate()) return;
@@ -1548,7 +1946,11 @@ class _ReferTabScreenState extends State<ReferTabScreen> {
         children: [
           const Text(
             'Share the App Download Link',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: BDSColors.primaryGreen),
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w500,
+              color: BDSColors.primaryGreen,
+            ),
           ),
           const SizedBox(height: 8),
           const Text(
@@ -1585,20 +1987,30 @@ class _ReferTabScreenState extends State<ReferTabScreen> {
             child: OutlinedButton.icon(
               onPressed: _copyLink,
               icon: const Icon(Icons.copy, color: BDSColors.primaryGreen),
-              label: const Text('Copy Download Link', style: TextStyle(color: BDSColors.primaryGreen)),
+              label: const Text(
+                'Copy Download Link',
+                style: TextStyle(color: BDSColors.primaryGreen),
+              ),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: BDSColors.primaryGreen),
               ),
             ),
           ),
           const SizedBox(height: 20),
-          const Text('How It Works', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+          const Text(
+            'How It Works',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          ),
           const SizedBox(height: 8),
-          const Text('1. Tap Generate Download Link to create a fresh app download link.'),
+          const Text(
+            '1. Tap Generate Download Link to create a fresh app download link.',
+          ),
           const SizedBox(height: 6),
           const Text('2. Tap Copy Download Link and paste it in your chats.'),
           const SizedBox(height: 6),
-          const Text('3. Friends open the link directly to download Bingwa Data Swift.'),
+          const Text(
+            '3. Friends open the link directly to download Bingwa Data Swift.',
+          ),
         ],
       ),
     );
@@ -1626,20 +2038,30 @@ class HistoryTabScreen extends StatelessWidget {
           if (orders.isNotEmpty)
             TextButton(
               onPressed: onClearOrders,
-              child: const Text('Clear', style: TextStyle(color: BDSColors.dangerRed)),
+              child: const Text(
+                'Clear',
+                style: TextStyle(color: BDSColors.dangerRed),
+              ),
             ),
         ],
       ),
       body: orders.isEmpty
-          ? Center(
+          ? const Center(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.all(24),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(Icons.receipt_long, size: 48, color: BDSColors.greyText),
+                  children: [
+                    Icon(
+                      Icons.receipt_long,
+                      size: 48,
+                      color: BDSColors.greyText,
+                    ),
                     SizedBox(height: 12),
-                    Text('No orders recorded yet.', style: TextStyle(fontSize: 16)),
+                    Text(
+                      'No orders recorded yet.',
+                      style: TextStyle(fontSize: 16),
+                    ),
                     SizedBox(height: 6),
                     Text(
                       'Your M-Pesa STK Push order history, payment status, and delivery status will appear here.',
@@ -1668,17 +2090,29 @@ class HistoryTabScreen extends StatelessWidget {
                     children: [
                       Text('Order ID: ${o.orderId}'),
                       const SizedBox(height: 4),
-                      Text('Network: ${o.network} | Bundle: ${o.bundleName}'),
+                      Text(
+                        'Network: ${o.network} | Bundle: ${o.bundleName}',
+                      ),
                       const SizedBox(height: 4),
-                      Text('Recipient: ${o.recipientPhone} | Payment Phone: ${o.paymentPhone}'),
+                      Text(
+                        'Recipient: ${o.recipientPhone} | Payment Phone: ${o.paymentPhone}',
+                      ),
                       const SizedBox(height: 4),
-                      Text('Amount: KES ${o.amountKes} | Date: ${o.dateLabel}'),
+                      Text(
+                        'Amount: KES ${o.amountKes} | Date: ${o.dateLabel}',
+                      ),
                       const SizedBox(height: 4),
                       Text('Payment Ref: ${o.paymentRef}'),
                       const SizedBox(height: 4),
-                      Text('Payment Status: ${o.paymentStatus}', style: const TextStyle(color: BDSColors.amberText)),
+                      Text(
+                        'Payment Status: ${o.paymentStatus}',
+                        style: const TextStyle(color: BDSColors.amberText),
+                      ),
                       const SizedBox(height: 4),
-                      Text('Delivery Status: ${o.deliveryStatus}', style: const TextStyle(color: BDSColors.greyText)),
+                      Text(
+                        'Delivery Status: ${o.deliveryStatus}',
+                        style: const TextStyle(color: BDSColors.greyText),
+                      ),
                     ],
                   ),
                 );
@@ -1704,7 +2138,11 @@ class SupportTabScreen extends StatelessWidget {
         children: [
           const Text(
             'Customer Support',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: BDSColors.primaryGreen),
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w500,
+              color: BDSColors.primaryGreen,
+            ),
           ),
           const SizedBox(height: 6),
           const Text(
@@ -1728,7 +2166,10 @@ class SupportTabScreen extends StatelessWidget {
             child: OutlinedButton.icon(
               onPressed: () => openCallDirect(context),
               icon: const Icon(Icons.call, color: BDSColors.primaryGreen),
-              label: const Text('Call', style: TextStyle(color: BDSColors.primaryGreen)),
+              label: const Text(
+                'Call',
+                style: TextStyle(color: BDSColors.primaryGreen),
+              ),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: BDSColors.primaryGreen, width: 1.4),
               ),
@@ -1745,7 +2186,10 @@ class SupportTabScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 22),
-          const Text('Helpful Information', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+          const Text(
+            'Helpful Information',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          ),
           const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.all(14),
@@ -1757,14 +2201,20 @@ class SupportTabScreen extends StatelessWidget {
             child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Direct M-Pesa STK Push', style: TextStyle(fontWeight: FontWeight.w500)),
+                Text(
+                  'Direct M-Pesa STK Push',
+                  style: TextStyle(fontWeight: FontWeight.w500),
+                ),
                 SizedBox(height: 4),
                 Text(
                   'Payments are initiated via M-Pesa STK Push and verified through server callback confirmation.',
                   style: TextStyle(color: BDSColors.greyText, fontSize: 13),
                 ),
                 SizedBox(height: 12),
-                Text('Recipient Number Check', style: TextStyle(fontWeight: FontWeight.w500)),
+                Text(
+                  'Recipient Number Check',
+                  style: TextStyle(fontWeight: FontWeight.w500),
+                ),
                 SizedBox(height: 4),
                 Text(
                   'Confirm the recipient phone number carefully before approving your M-Pesa STK Push prompt.',
@@ -1779,7 +2229,7 @@ class SupportTabScreen extends StatelessWidget {
   }
 }
 
-class AccountScreen extends StatelessWidget {
+class AccountScreen extends StatefulWidget {
   final String userName;
   final String userPhone;
   final String? profilePhotoPath;
@@ -1801,6 +2251,19 @@ class AccountScreen extends StatelessWidget {
     required this.onOpenAdmin,
   });
 
+  @override
+  State<AccountScreen> createState() => _AccountScreenState();
+}
+
+class _AccountScreenState extends State<AccountScreen> {
+  final _pinCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _pinCtrl.dispose();
+    super.dispose();
+  }
+
   void _showLegalSheet(BuildContext context, String title, String body) {
     showModalBottomSheet(
       context: context,
@@ -1814,9 +2277,15 @@ class AccountScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
+              Text(
+                title,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+              ),
               const SizedBox(height: 12),
-              Text(body, style: const TextStyle(color: BDSColors.greyText, height: 1.5)),
+              Text(
+                body,
+                style: const TextStyle(color: BDSColors.greyText, height: 1.5),
+              ),
             ],
           ),
         ),
@@ -1826,8 +2295,6 @@ class AccountScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pinCtrl = TextEditingController();
-
     return Scaffold(
       backgroundColor: BDSColors.pureWhite,
       appBar: AppBar(
@@ -1840,7 +2307,7 @@ class AccountScreen extends StatelessWidget {
           Row(
             children: [
               buildAvatarWidget(
-                imagePath: profilePhotoPath,
+                imagePath: widget.profilePhotoPath,
                 radius: 30,
               ),
               const SizedBox(width: 14),
@@ -1848,9 +2315,18 @@ class AccountScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Name: $userName', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                    Text(
+                      'Name: ${widget.userName}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                     const SizedBox(height: 4),
-                    Text('Phone: $userPhone', style: const TextStyle(color: BDSColors.greyText)),
+                    Text(
+                      'Phone: ${widget.userPhone}',
+                      style: const TextStyle(color: BDSColors.greyText),
+                    ),
                   ],
                 ),
               ),
@@ -1858,24 +2334,32 @@ class AccountScreen extends StatelessWidget {
                 onPressed: () async {
                   final pickedPath = await pickImageFromGallery(context);
                   if (pickedPath != null && context.mounted) {
-                    onUpdateProfilePhoto(pickedPath);
+                    widget.onUpdateProfilePhoto(pickedPath);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Profile picture updated from gallery.')),
+                      const SnackBar(
+                        content: Text('Profile picture updated from gallery.'),
+                      ),
                     );
                   }
                 },
-                child: const Text('Change Photo', style: TextStyle(color: BDSColors.primaryGreen)),
+                child: const Text(
+                  'Change Photo',
+                  style: TextStyle(color: BDSColors.primaryGreen),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 20),
-          const Text('Change 4-Digit PIN', style: TextStyle(fontWeight: FontWeight.w500)),
+          const Text(
+            'Change 4-Digit PIN',
+            style: TextStyle(fontWeight: FontWeight.w500),
+          ),
           const SizedBox(height: 8),
           Row(
             children: [
               Expanded(
                 child: TextField(
-                  controller: pinCtrl,
+                  controller: _pinCtrl,
                   keyboardType: TextInputType.number,
                   maxLength: 4,
                   obscureText: true,
@@ -1888,8 +2372,9 @@ class AccountScreen extends StatelessWidget {
               const SizedBox(width: 10),
               ElevatedButton(
                 onPressed: () {
-                  if (pinCtrl.text.trim().length == 4) {
-                    onUpdatePin(pinCtrl.text.trim());
+                  if (_pinCtrl.text.trim().length == 4) {
+                    widget.onUpdatePin(_pinCtrl.text.trim());
+                    _pinCtrl.clear();
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('PIN updated successfully.')),
                     );
@@ -1920,17 +2405,20 @@ class AccountScreen extends StatelessWidget {
               'Orders are initiated through M-Pesa STK Push. Check the recipient phone number, bundle details, and validity period before confirming payment. Fulfillment depends on payment callback verification and network processing.',
             ),
           ),
-          if (isAdmin && onOpenAdmin != null) ...[
+          if (widget.isAdmin && widget.onOpenAdmin != null) ...[
             const SizedBox(height: 16),
             OutlinedButton(
               onPressed: () {
                 Navigator.pop(context);
-                onOpenAdmin!();
+                widget.onOpenAdmin!();
               },
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: BDSColors.primaryGreen, width: 1.4),
               ),
-              child: const Text('Admin Dashboard', style: TextStyle(color: BDSColors.primaryGreen)),
+              child: const Text(
+                'Admin Dashboard',
+                style: TextStyle(color: BDSColors.primaryGreen),
+              ),
             ),
           ],
           const SizedBox(height: 12),
@@ -1940,7 +2428,7 @@ class AccountScreen extends StatelessWidget {
             child: ElevatedButton(
               onPressed: () {
                 Navigator.pop(context);
-                onLogout();
+                widget.onLogout();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: BDSColors.dangerRed,
@@ -1997,6 +2485,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   final _adTitleCtrl = TextEditingController();
   final _adSubtitleCtrl = TextEditingController();
 
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _priceCtrl.dispose();
+    _validityCtrl.dispose();
+    _categoryCtrl.dispose();
+    _adTitleCtrl.dispose();
+    _adSubtitleCtrl.dispose();
+    super.dispose();
+  }
+
   void _addNewOffer() {
     final name = _nameCtrl.text.trim();
     final priceNum = int.tryParse(_priceCtrl.text.trim());
@@ -2039,7 +2538,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               Navigator.pop(ctx);
               setState(() {});
             },
-            child: const Text('Delete', style: TextStyle(color: BDSColors.dangerRed)),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: BDSColors.dangerRed),
+            ),
           ),
         ],
       ),
@@ -2063,7 +2565,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
           const SizedBox(height: 12),
           SwitchListTile(
-            title: Text(widget.storeOpen ? 'Store Status: Open' : 'Store Status: Closed'),
+            title: Text(
+              widget.storeOpen ? 'Store Status: Open' : 'Store Status: Closed',
+            ),
             value: widget.storeOpen,
             activeTrackColor: BDSColors.primaryGreen,
             onChanged: (val) {
@@ -2072,16 +2576,25 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             },
           ),
           const Divider(height: 24),
-          const Text('Manage Ads', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+          const Text(
+            'Manage Ads',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          ),
           const SizedBox(height: 8),
           TextField(
             controller: _adTitleCtrl,
-            decoration: const InputDecoration(labelText: 'Ad Title', border: OutlineInputBorder()),
+            decoration: const InputDecoration(
+              labelText: 'Ad Title',
+              border: OutlineInputBorder(),
+            ),
           ),
           const SizedBox(height: 8),
           TextField(
             controller: _adSubtitleCtrl,
-            decoration: const InputDecoration(labelText: 'Ad Subtitle', border: OutlineInputBorder()),
+            decoration: const InputDecoration(
+              labelText: 'Ad Subtitle',
+              border: OutlineInputBorder(),
+            ),
           ),
           const SizedBox(height: 8),
           ElevatedButton(
@@ -2094,7 +2607,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     subtitle: _adSubtitleCtrl.text.trim().isEmpty
                         ? 'Bingwa Data Swift promotion'
                         : _adSubtitleCtrl.text.trim(),
-                    icon: Icons.campaign,
+                    iconCodePoint: Icons.campaign.codePoint,
                   ),
                 );
                 _adTitleCtrl.clear();
@@ -2119,10 +2632,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
           ),
           const Divider(height: 24),
-          const Text('Add New Offer', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+          const Text(
+            'Add New Offer',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          ),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
-            value: _selectedNet,
+            initialValue: _selectedNet,
             items: const ['SAFARICOM', 'AIRTEL', 'TELKOM', 'FAIBA']
                 .map((n) => DropdownMenuItem(value: n, child: Text(n)))
                 .toList(),
@@ -2131,18 +2647,27 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           const SizedBox(height: 8),
           TextField(
             controller: _nameCtrl,
-            decoration: const InputDecoration(labelText: 'Offer Name (e.g. 2GB)', border: OutlineInputBorder()),
+            decoration: const InputDecoration(
+              labelText: 'Offer Name (e.g. 2GB)',
+              border: OutlineInputBorder(),
+            ),
           ),
           const SizedBox(height: 8),
           TextField(
             controller: _priceCtrl,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Price in KES (e.g. 110)', border: OutlineInputBorder()),
+            decoration: const InputDecoration(
+              labelText: 'Price in KES (e.g. 110)',
+              border: OutlineInputBorder(),
+            ),
           ),
           const SizedBox(height: 8),
           TextField(
             controller: _validityCtrl,
-            decoration: const InputDecoration(labelText: 'Validity (e.g. 24Hrs)', border: OutlineInputBorder()),
+            decoration: const InputDecoration(
+              labelText: 'Validity (e.g. 24Hrs)',
+              border: OutlineInputBorder(),
+            ),
           ),
           const SizedBox(height: 10),
           ElevatedButton(
@@ -2150,20 +2675,34 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             child: const Text('Add Offer'),
           ),
           const Divider(height: 24),
-          const Text('Manage Offers (Hide / Show / Delete)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+          const Text(
+            'Manage Offers (Hide / Show / Delete)',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          ),
           const SizedBox(height: 8),
           ...widget.offers.map(
             (offer) => ListTile(
-              title: Text('${offer.network} | ${offer.name} (${offer.priceLabel})', style: const TextStyle(fontSize: 13)),
+              title: Text(
+                '${offer.network} | ${offer.name} (${offer.priceLabel})',
+                style: const TextStyle(fontSize: 13),
+              ),
               subtitle: Text(
                 offer.isVisible ? 'Visible' : 'Hidden',
-                style: TextStyle(color: offer.isVisible ? BDSColors.primaryGreen : BDSColors.greyText),
+                style: TextStyle(
+                  color: offer.isVisible
+                      ? BDSColors.primaryGreen
+                      : BDSColors.greyText,
+                ),
               ),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
-                    icon: Icon(offer.isVisible ? Icons.visibility_off : Icons.visibility),
+                    icon: Icon(
+                      offer.isVisible
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                    ),
                     onPressed: () {
                       widget.onEditOffer(offer.copyWith(isVisible: !offer.isVisible));
                       setState(() {});
