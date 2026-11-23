@@ -41,7 +41,7 @@ jobs:
       - name: Set App Name and Apply Custom Icon
         run: |
           python3 - <<'PY'
-          import os, re, subprocess
+          import os, re, shutil, subprocess
 
           manifest_path = "android/app/src/main/AndroidManifest.xml"
           if os.path.exists(manifest_path):
@@ -51,16 +51,20 @@ jobs:
               with open(manifest_path, "w", encoding="utf-8") as f:
                   f.write(content)
 
+          anydpi_dir = "android/app/src/main/mipmap-anydpi-v26"
+          if os.path.isdir(anydpi_dir):
+              shutil.rmtree(anydpi_dir)
+
           src_icon = "assets/app_icon.png"
-          densities = {
-              "mipmap-mdpi": 48,
-              "mipmap-hdpi": 72,
-              "mipmap-xhdpi": 96,
-              "mipmap-xxhdpi": 144,
-              "mipmap-xxxhdpi": 192,
-          }
+          densities = [
+              "mipmap-mdpi",
+              "mipmap-hdpi",
+              "mipmap-xhdpi",
+              "mipmap-xxhdpi",
+              "mipmap-xxxhdpi",
+          ]
           if os.path.exists(src_icon):
-              for folder, sz in densities.items():
+              for folder in densities:
                   out_dir = os.path.join("android/app/src/main", folder)
                   os.makedirs(out_dir, exist_ok=True)
                   for name in ["ic_launcher.png", "ic_launcher_round.png", "ic_launcher_foreground.png"]:
