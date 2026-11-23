@@ -137,7 +137,6 @@ class Catalogue68 {
   static const String appDownloadBaseUrl = 'https://bingwadataswift.app/download';
 
   static const List<OfferModel> initialOffers = [
-    // SAFARICOM DATA/COMBO (24)
     OfferModel(id: 's_dc_1', network: 'SAFARICOM', name: '10MB+7SMS', priceLabel: 'KES 8', fixedPriceKes: 8, validity: '24Hrs', category: 'DATA/COMBO'),
     OfferModel(id: 's_dc_2', network: 'SAFARICOM', name: '250MB', priceLabel: 'KES 20', fixedPriceKes: 20, validity: '24Hrs', category: 'DATA/COMBO'),
     OfferModel(id: 's_dc_3', network: 'SAFARICOM', name: '1GB', priceLabel: 'KES 21', fixedPriceKes: 21, validity: '1Hr', category: 'DATA/COMBO'),
@@ -162,8 +161,6 @@ class Catalogue68 {
     OfferModel(id: 's_dc_22', network: 'SAFARICOM', name: '21GB', priceLabel: 'KES 1006', fixedPriceKes: 1006, validity: '30Days', category: 'DATA/COMBO'),
     OfferModel(id: 's_dc_23', network: 'SAFARICOM', name: '21GB', priceLabel: 'KES 1020', fixedPriceKes: 1020, validity: '30Days', category: 'DATA/COMBO'),
     OfferModel(id: 's_dc_24', network: 'SAFARICOM', name: '150GB', priceLabel: 'KES 5012', fixedPriceKes: 5012, validity: '30Days', category: 'DATA/COMBO'),
-
-    // SAFARICOM MINUTES (11)
     OfferModel(id: 's_m_1', network: 'SAFARICOM', name: '45Mins', priceLabel: 'KES 23', fixedPriceKes: 23, validity: '3Hrs', category: 'MINUTES'),
     OfferModel(id: 's_m_2', network: 'SAFARICOM', name: '45Mins', priceLabel: 'KES 22', fixedPriceKes: 22, validity: '3Hrs', category: 'MINUTES'),
     OfferModel(id: 's_m_3', network: 'SAFARICOM', name: '500Flex', priceLabel: 'KES 34', fixedPriceKes: 34, validity: '2Hrs', category: 'MINUTES'),
@@ -175,8 +172,6 @@ class Catalogue68 {
     OfferModel(id: 's_m_9', network: 'SAFARICOM', name: '1000Mins', priceLabel: 'KES 1017', fixedPriceKes: 1017, validity: '30Days', category: 'MINUTES'),
     OfferModel(id: 's_m_10', network: 'SAFARICOM', name: '1250Mins', priceLabel: 'KES 1019', fixedPriceKes: 1019, validity: '30Days', category: 'MINUTES'),
     OfferModel(id: 's_m_11', network: 'SAFARICOM', name: '1250Mins', priceLabel: 'KES 1010', fixedPriceKes: 1010, validity: '30Days', category: 'MINUTES'),
-
-    // SAFARICOM SMS (9)
     OfferModel(id: 's_s_1', network: 'SAFARICOM', name: '20SMS', priceLabel: 'KES 5', fixedPriceKes: 5, validity: '24Hrs', category: 'SMS'),
     OfferModel(id: 's_s_2', network: 'SAFARICOM', name: '200SMS', priceLabel: 'KES 10', fixedPriceKes: 10, validity: '24Hrs', category: 'SMS'),
     OfferModel(id: 's_s_3', network: 'SAFARICOM', name: '200SMS', priceLabel: 'KES 12', fixedPriceKes: 12, validity: '24Hrs', category: 'SMS'),
@@ -186,12 +181,8 @@ class Catalogue68 {
     OfferModel(id: 's_s_7', network: 'SAFARICOM', name: 'Unlimited SMS', priceLabel: 'KES 64', fixedPriceKes: 64, validity: '7Days', category: 'SMS'),
     OfferModel(id: 's_s_8', network: 'SAFARICOM', name: '1500SMS', priceLabel: 'KES 103', fixedPriceKes: 103, validity: '30Days', category: 'SMS'),
     OfferModel(id: 's_s_9', network: 'SAFARICOM', name: '3500SMS', priceLabel: 'KES 209', fixedPriceKes: 209, validity: '30Days', category: 'SMS'),
-
-    // SAFARICOM NO EXPIRY (2)
     OfferModel(id: 's_ne_1', network: 'SAFARICOM', name: 'No Expiry Airtime', priceLabel: 'KES 1-499', fixedPriceKes: null, minKes: 1, maxKes: 499, validity: 'No Expiry', category: 'NO EXPIRY'),
     OfferModel(id: 's_ne_2', network: 'SAFARICOM', name: 'No Expiry Data', priceLabel: 'KES 1-499', fixedPriceKes: null, minKes: 1, maxKes: 499, validity: 'No Expiry', category: 'NO EXPIRY'),
-
-    // AIRTEL (13)
     OfferModel(id: 'a_1', network: 'AIRTEL', name: '40SMS', priceLabel: 'KES 6', fixedPriceKes: 6, validity: '24Hrs', category: 'SMS'),
     OfferModel(id: 'a_2', network: 'AIRTEL', name: '1200 On-Net SMS', priceLabel: 'KES 13', fixedPriceKes: 13, validity: '24Hrs', category: 'SMS'),
     OfferModel(id: 'a_3', network: 'AIRTEL', name: '250SMS', priceLabel: 'KES 15', fixedPriceKes: 15, validity: '24Hrs', category: 'SMS'),
@@ -205,12 +196,8 @@ class Catalogue68 {
     OfferModel(id: 'a_11', network: 'AIRTEL', name: '25GB', priceLabel: 'KES 1015', fixedPriceKes: 1015, validity: '30Days', category: 'DATA'),
     OfferModel(id: 'a_12', network: 'AIRTEL', name: '55GB', priceLabel: 'KES 2017', fixedPriceKes: 2017, validity: '30Days', category: 'DATA'),
     OfferModel(id: 'a_13', network: 'AIRTEL', name: '55GB', priceLabel: 'KES 6020', fixedPriceKes: 6020, validity: '90Days', category: 'DATA'),
-
-    // TELKOM (2)
     OfferModel(id: 't_1', network: 'TELKOM', name: 'Madaraka Life 1GB+100 Onnet Mins', priceLabel: 'KES 63', fixedPriceKes: 63, validity: '30Days', category: 'COMBO'),
     OfferModel(id: 't_2', network: 'TELKOM', name: 'Mambo 199 6GB+200 Telkom Mins', priceLabel: 'KES 204', fixedPriceKes: 204, validity: '30Days', category: 'COMBO'),
-
-    // FAIBA (7)
     OfferModel(id: 'f_1', network: 'FAIBA', name: '500MB', priceLabel: 'KES 26', fixedPriceKes: 26, validity: '24Hrs', category: 'DATA'),
     OfferModel(id: 'f_2', network: 'FAIBA', name: '1.5GB', priceLabel: 'KES 59', fixedPriceKes: 59, validity: '24Hrs', category: 'DATA'),
     OfferModel(id: 'f_3', network: 'FAIBA', name: '3GB', priceLabel: 'KES 109', fixedPriceKes: 109, validity: '3Days', category: 'DATA'),
